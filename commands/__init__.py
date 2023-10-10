@@ -1,5 +1,3 @@
-commandList = []
+from .start_voting import start_voting
 
-from .vote import command as voting 
-
-commandList.append(voting)
+commandList = [start_voting]

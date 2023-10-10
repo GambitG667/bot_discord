@@ -1,3 +1,5 @@
 __pycache__/
+*.swp
+
 /test.py
-log.txt
+bot.log

@@ -1,16 +1,21 @@
 import logging
 
-def setup_logger(main):
-    logger = logging.getLogger(main)
+# Создаём логгер для root дериктории
+def setup_logger():
+    logger = logging.getLogger()
     logger.setLevel(logging.INFO)
     
-    dt_fmt = '%Y-%m-%d %H:%M:%S' 
-    formatter = logging.Formatter('[{asctime}] [{levelname:<8}] {name}: {message}', dt_fmt, style='{')
-    streamHandler = logging.StreamHandler()
-    streamHandler.setFormatter(formatter)
-    fileHandler = logging.FileHandler("log.txt")
+    formatter = logging.Formatter(
+            "[{asctime}] [{levelname:<8}] - {name}: {message}",
+            "%d-%m-%Y %H:%M:%S",
+            style="{"
+                                  )
+
+    fileHandler = logging.FileHandler("bot.log")
     fileHandler.setFormatter(formatter)
 
-    logger.addHandler(streamHandler)
+    streamHandler = logging.StreamHandler()
+    streamHandler.setFormatter(formatter)
+
     logger.addHandler(fileHandler)
-    return logger
+    logger.addHandler(streamHandler)
