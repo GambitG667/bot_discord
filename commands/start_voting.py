@@ -22,7 +22,10 @@ async def command(inter, title: str, text: str):
 
     logger.info(f"{inter.author.name} начал голосование: {title} => {text}")
     await inter.send(embed=embed, view=view)
-    view.messageId = (await inter.original_message()).id
+    message = await inter.original_message()
+
+    inter.bot.db.start_voting(message.id, title, text, inter.author.id)
+    view.message_id = message.id
 
 start_voting = commands.InvokableSlashCommand(
     command,
@@ -35,37 +38,37 @@ class Voting(disnake.ui.View):
     def __init__(self, author, timeout = None):
         super().__init__(timeout=timeout)
         self.author = author
-        self.value = dict()
 
     @disnake.ui.button(label="Согласен", style=disnake.ButtonStyle.green)
     async def confirm(self, button, inter):
         user = inter.author
-        if self.value.get(user.name) == True:
+        t = inter.bot.db.get_vote_index(inter.author.id, self.message_id, 2)
+        if t:
             await inter.send(f"Вы уже проголосовали за {button.label}", ephemeral=True)
         else:
             logger.info(f"{inter.author.name} прологосовал за \"{button.label}\"")
 
             await inter.send(f"Вы проголосовали за {button.label}", ephemeral=True)
-            self.value[user.name] = True
+            inter.bot.db.vote(inter.author.id, self.message_id, True)
 
     @disnake.ui.button(label="Не согласен", style=disnake.ButtonStyle.red)
     async def cancel(self, button, inter):
         user = inter.author
-        if self.value.get(user.name) == False:
+        t = inter.bot.db.get_vote_index(inter.author.id, self.message_id, 2)
+        if not t:
             await inter.send(f"Вы уже проголосовали за {button.label}", ephemeral=True)
         else:
             logger.info(f"{inter.author.name} проголосовал за \"{button.label}\"")
 
             await inter.send(f"Вы проголосовали за {button.label}", ephemeral=True)
-            self.value[user.name] = False
+            inter.bot.db.vote(inter.author.id, self.message_id, False)
 
     @disnake.ui.button(label="Окончить голосование", style=disnake.ButtonStyle.grey)
     async def stop_voting(self, button, inter):
         if inter.permissions.administrator or inter.author.name == self.author:
-            if hasattr(self, "messageId"):
-                message = inter.bot.get_message(self.messageId)
+            if hasattr(self, "message_id"):
+                message = inter.bot.get_message(self.message_id)
                 await message.delete()
-
+            inter.bot.db.stop_voting(self.message_id)
             logger.info(f"{inter.author.name} окончил голосование")
             await inter.send("Голосование окончено", ephemeral=True)
-            self.stop()

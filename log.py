@@ -3,7 +3,7 @@ import logging
 # Создаём логгер для root дериктории
 def setup_logger():
     logger = logging.getLogger()
-    logger.setLevel(logging.INFO)
+    logger.setLevel(logging.DEBUG)
     
     formatter = logging.Formatter(
             "[{asctime}] [{levelname:<8}] - {name}: {message}",
