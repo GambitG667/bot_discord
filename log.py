@@ -4,6 +4,9 @@ import logging
 def setup_logger():
     logger = logging.getLogger()
     logger.setLevel(logging.DEBUG)
+
+    logging.getLogger("aiosqlite").setLevel(logging.INFO)
+    logging.getLogger("disnake").setLevel(logging.WARNING)
     
     formatter = logging.Formatter(
             "[{asctime}] [{levelname:<8}] - {name}: {message}",
