@@ -22,7 +22,7 @@ for command in commandList:
 @bot.event
 async def on_ready():
     logger.info(f"Бот {bot.user} готов!")
-    bot.db = await Database.open("database.db")
+    bot.db = Database("database.db")
 
 @bot.event
 async def on_disconnect():
