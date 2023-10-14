@@ -59,7 +59,7 @@ class Modal(disnake.ui.Modal):
         await inter.send(embed=embed, view=view)
         message = await inter.original_message()
 
-        inter.bot.db.start_voting(message.id, title, text, inter.author.id)
+        await inter.bot.db.start_voting(message.id, title, text, inter.author.id)
         view.message_id = message.id
 
 class Voting(disnake.ui.View):
@@ -71,7 +71,7 @@ class Voting(disnake.ui.View):
     @disnake.ui.button(label="Согласен", style=disnake.ButtonStyle.green)
     async def confirm(self, button, inter):
         user = inter.author
-        vote = inter.bot.db.get_vote(inter.author.id, self.message_id)
+        vote = await inter.bot.db.get_vote(inter.author.id, self.message_id)
         t = None
         if vote is not None:
             t = vote.type
@@ -81,12 +81,12 @@ class Voting(disnake.ui.View):
             logger.info(f"{inter.author.name} прологосовал за \"{button.label}\"")
 
             await inter.send(f"Вы проголосовали за {button.label}", ephemeral=True)
-            inter.bot.db.vote(inter.author.id, self.message_id, True)
+            await inter.bot.db.vote(inter.author.id, self.message_id, True)
 
     @disnake.ui.button(label="Не согласен", style=disnake.ButtonStyle.red)
     async def cancel(self, button, inter):
         user = inter.author
-        vote = inter.bot.db.get_vote(inter.author.id, self.message_id)
+        vote = await inter.bot.db.get_vote(inter.author.id, self.message_id)
         t = None
         if vote is not None:
             t = vote.type
@@ -96,7 +96,7 @@ class Voting(disnake.ui.View):
             logger.info(f"{inter.author.name} проголосовал за \"{button.label}\"")
 
             await inter.send(f"Вы проголосовали за {button.label}", ephemeral=True)
-            inter.bot.db.vote(inter.author.id, self.message_id, False)
+            await inter.bot.db.vote(inter.author.id, self.message_id, False)
 
     @disnake.ui.button(label="Окончить голосование", style=disnake.ButtonStyle.grey)
     async def stop_voting(self, button, inter):
@@ -104,6 +104,6 @@ class Voting(disnake.ui.View):
             if hasattr(self, "message_id"):
                 message = inter.bot.get_message(self.message_id)
                 await message.delete()
-            inter.bot.db.close_voting(self.message_id)
+            await inter.bot.db.close_voting(self.message_id)
             logger.info(f"{inter.author.name} окончил голосование")
             await inter.send("Голосование окончено", ephemeral=True)
