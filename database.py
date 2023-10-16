@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 class Database:
     @dataclass
     class Voting:
-        message_id: int
+        id: int
         title: str
         description: str
         author_id: int
@@ -47,7 +47,7 @@ PARSE_DECLTYPES)
         with self.connect:
             cur = self.connect.executescript("""
             CREATE TABLE IF NOT EXISTS votings (
-                "message_id" INTEGER PRIMARY KEY,
+                "id" INTEGER PRIMARY KEY AUTOINCREMENT,
                 "title" TEXT NOT NULL,
                 "description" TEXT NOT NULL,
                 "author_id" INTEGER NOT NULL,
@@ -85,13 +85,12 @@ PARSE_DECLTYPES)
 
     def put(self, query, params):
         with self.connect:
-            self.connect.execute(query, params)
+            cur = self.connect.execute(query, params)
+            return cur.lastrowid
 
-    async def execute_async(self, method, query=None, params=None):
+    async def execute_async(self, method, *args):
         loop = asyncio.get_event_loop()
-        if query is not None and params is not None:
-            return await loop.run_in_executor(None, lambda: method(query, params))
-        return await loop.run_in_executor(None, lambda: method())
+        return await loop.run_in_executor(None, lambda: method(*args))
 
     async def async_get(self, query, params):
         return await self.execute_async(self.get, query, params)
@@ -100,29 +99,35 @@ PARSE_DECLTYPES)
         return await self.execute_async(self.get_one, query, params)
 
     async def async_put(self, query, params):
-        await self.execute_async(self.put, query, params)
+        return await self.execute_async(self.put, query, params)
 
-    async def start_voting(self, message_id, title, desc, author_id):
-        query = "INSERT INTO votings (message_id,title,description,author_id,created) VALUES (?, ?, ?, ?, ?)"
-        await self.async_put(query, (message_id, title, desc, author_id, datetime.today()))
+    async def start_voting(self, title, desc, author_id):
+        query = "INSERT INTO votings (title,description,author_id,created) VALUES (?, ?, ?, ?)"
+        return await self.async_put(query, (title, desc, author_id, datetime.today()))
 
-    async def close_voting(self, message_id):
-        query = "UPDATE votings SET closed = ? WHERE message_id = ?"
-        await self.async_put(query, (datetime.today(), message_id))
+    async def close_voting(self, id_):
+        query = "UPDATE votings SET closed = ? WHERE id = ?"
+        return await self.async_put(query, (datetime.today(), id_))
 
-    async def get_voting(self, message_id):
-        query = "SELECT * FROM votings WHERE message_id = ?"
-        t = await self.async_get_one(query, (message_id,))
+    async def get_voting(self, id_):
+        query = "SELECT * FROM votings WHERE id = ?"
+        t = await self.async_get_one(query, (id_,))
         if t is not None:
             return self.Voting(*t)
 
-    async def vote(self, user_id, voting_id, typ):
+    async def create_vote(self, user_id, voting_id, type_):
         query = "INSERT INTO votes (user_id,voting_id,type,created) VALUES (?, ?, ?, ?)"
-        await self.async_put(query, (user_id, voting_id, typ, datetime.today()))
+        return  await self.async_put(query, (user_id, voting_id, type_, datetime.today()))
 
     async def get_vote(self, user_id, voting_id):
         query = "SELECT * FROM votes WHERE user_id = ? AND voting_id = ? ORDER BY id DESC"
         t = await self.async_get_one(query, (user_id, voting_id))
+        if t is not None:
+            return self.Vote(*t)
+
+    async def get_vote_by_id(self, id_):
+        query = "SELECT * FROM votes WHERE id = ?"
+        t = await self.async_get_one(query, (id_,))
         if t is not None:
             return self.Vote(*t)
 

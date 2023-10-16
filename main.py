@@ -5,7 +5,8 @@ import logging
 from log import setup_logger
 setup_logger()
 
-from commands import commandList
+from commons import Commons
+from admins import Admins
 from database import Database
 
 logger = logging.getLogger(__name__)
@@ -14,10 +15,10 @@ logger.debug("Логгер установлен")
 # Бот, который работает только с командами приложения
 bot = commands.InteractionBot(intents=disnake.Intents.all())
 
-# Парсим команды c помощью цикл.
-for command in commandList:
-    logger.debug(f"Регистрация комманды {command.name}")
-    bot.add_slash_command(command)
+logger.debug(f"Регистрация кога common")
+bot.add_cog(Commons())
+logger.debug(f"Регистрация кога admins")
+bot.add_cog(Admins())
 
 @bot.event
 async def on_ready():
