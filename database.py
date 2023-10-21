@@ -101,9 +101,9 @@ PARSE_DECLTYPES)
     async def async_put(self, query, params):
         return await self.execute_async(self.put, query, params)
 
-    async def start_voting(self, title, desc, author_id):
-        query = "INSERT INTO votings (title,description,author_id,created) VALUES (?, ?, ?, ?)"
-        return await self.async_put(query, (title, desc, author_id, datetime.today()))
+    async def start_voting(self, title, desc, author_id, anonym):
+        query = "INSERT INTO votings (title,description,author_id,created,anonym) VALUES (?, ?, ?, ?, ?)"
+        return await self.async_put(query, (title, desc, author_id, datetime.today(), anonym))
 
     async def close_voting(self, id_):
         query = "UPDATE votings SET closed = ? WHERE id = ?"
