@@ -13,24 +13,6 @@ sqlite3.register_converter("DATETIME", lambda v: datetime.fromisoformat(v.decode
 logger = logging.getLogger(__name__)
 
 class Database:
-    @dataclass
-    class Voting:
-        id: int
-        title: str
-        description: str
-        author_id: int
-        anonym: bool
-        created: datetime
-        closed: datetime | None
-
-    @dataclass
-    class Vote:
-        id: int
-        user_id: int
-        voting_id: int
-        type: bool
-        created: datetime
-
     def __init__(self, path):
         self.path = path
         logger.debug("Иницилизация объекта базы данных")
@@ -100,36 +82,6 @@ PARSE_DECLTYPES)
 
     async def async_put(self, query, params):
         return await self.execute_async(self.put, query, params)
-
-    async def start_voting(self, title, desc, author_id, anonym):
-        query = "INSERT INTO votings (title,description,author_id,created,anonym) VALUES (?, ?, ?, ?, ?)"
-        return await self.async_put(query, (title, desc, author_id, datetime.today(), anonym))
-
-    async def close_voting(self, id_):
-        query = "UPDATE votings SET closed = ? WHERE id = ?"
-        return await self.async_put(query, (datetime.today(), id_))
-
-    async def get_voting(self, id_):
-        query = "SELECT * FROM votings WHERE id = ?"
-        t = await self.async_get_one(query, (id_,))
-        if t is not None:
-            return self.Voting(*t)
-
-    async def create_vote(self, user_id, voting_id, type_):
-        query = "INSERT INTO votes (user_id,voting_id,type,created) VALUES (?, ?, ?, ?)"
-        return  await self.async_put(query, (user_id, voting_id, type_, datetime.today()))
-
-    async def get_vote(self, user_id, voting_id):
-        query = "SELECT * FROM votes WHERE user_id = ? AND voting_id = ? ORDER BY id DESC"
-        t = await self.async_get_one(query, (user_id, voting_id))
-        if t is not None:
-            return self.Vote(*t)
-
-    async def get_vote_by_id(self, id_):
-        query = "SELECT * FROM votes WHERE id = ?"
-        t = await self.async_get_one(query, (id_,))
-        if t is not None:
-            return self.Vote(*t)
 
     def __del__(self):
         logger.info("Уничтожение объекта базы данных")

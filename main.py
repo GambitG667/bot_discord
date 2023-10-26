@@ -5,9 +5,9 @@ import logging
 from log import setup_logger
 setup_logger()
 
-from commons import Commons
-from admins import Admins
+from voting import Voting
 from database import Database
+from commands import Commons
 
 logger = logging.getLogger(__name__)
 logger.debug("Логгер установлен")
@@ -17,12 +17,10 @@ bot = commands.InteractionBot(intents=disnake.Intents.all())
 
 logger.debug(f"Регистрация кога common")
 bot.add_cog(Commons())
-logger.debug(f"Регистрация кога admins")
-bot.add_cog(Admins())
 
 @bot.event
 async def on_ready():
     logger.info(f"Бот {bot.user} готов!")
-    bot.db = await Database.open("database.db")
+    bot.voting = Voting(await Database.open("database.db"))
 
 bot.run(TOKEN)
