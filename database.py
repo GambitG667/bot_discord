@@ -12,7 +12,7 @@ sqlite3.register_converter("DATETIME", lambda v: datetime.fromisoformat(v.decode
 
 logger = logging.getLogger(__name__)
 
-from typing import Callable
+from typing import Callable, Self
 
 class Database:
     def __init__(self, path: str) -> None:
@@ -49,39 +49,39 @@ class Database:
             logger.info("Создание таблиц базы данных если их нет")
 
     @classmethod
-    async def open(cls, path: str) -> None:
+    async def open(cls, path: str) -> Self:
         obj = cls(path)
         await obj.connect_database()
         return obj
 
-    def _get(self, query: str, params) -> None:
+    def _get(self, query: str, params: list[any]) -> sqlite3.Cursor:
         cur = self.connect.execute(query, params)
         return cur
 
-    def get(self, query: str, params) -> None:
+    def get(self, query: str, params: list[any]) -> list[any]:
         cur = self._get(query, params)
         return cur.fetchall()
 
-    def get_one(self, query: str, params) -> None:
+    def get_one(self, query: str, params: list[any]) -> any:
         cur = self._get(query, params)
         return cur.fetchone()
 
-    def put(self, query: str, params) -> None:
+    def put(self, query: str, params: list[any]) -> int:
         with self.connect:
             cur = self.connect.execute(query, params)
             return cur.lastrowid
 
-    async def execute_async(self, method: Callable, *args: list[any]) -> None:
+    async def execute_async(self, method: Callable, *args: list[any]) -> any:
         loop = asyncio.get_event_loop()
         return await loop.run_in_executor(None, lambda: method(*args))
 
-    async def async_get(self, query: str, params: list[any]) -> None:
+    async def async_get(self, query: str, params: list[any]) -> list[any]:
         return await self.execute_async(self.get, query, params)
 
-    async def async_get_one(self, query: str, params: list[any]) -> None:
+    async def async_get_one(self, query: str, params: list[any]) -> any:
         return await self.execute_async(self.get_one, query, params)
 
-    async def async_put(self, query: str, params: list[any]) -> None:
+    async def async_put(self, query: str, params: list[any]) -> int:
         return await self.execute_async(self.put, query, params)
 
     def __del__(self) -> None:

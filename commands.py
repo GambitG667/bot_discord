@@ -92,7 +92,8 @@ class Commons(commands.Cog):
         await inter.response.defer(ephemeral=True)
         if await check_voting(inter, id_):
             view = LineView(inter, id_)
-            view, embed = await view.change(0)
-            await inter.edit_original_response(content=None, view=view, embed=embed)
+            view, embed = (await view.change(0))
+            if view is not None:
+                await inter.edit_original_response(content=None, view=view, embed=embed)
         else:
             await inter.edit_original_response(f"Голосование {id_} не найдено")

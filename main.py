@@ -24,9 +24,9 @@ async def on_ready() -> None:
     logger.info(f"Бот {bot.user} готов!")
     bot.voting = Voting(await Database.open(args["database"][0]))
 
-@bot.event
-async def on_slash_command_error(inter: disnake.CommandInter, error: commands.CommandError) -> None:
-    logger.error(f"Команда [{inter.application_command.qualified_name}] для {inter.author.display_name} создала ошибку: {error}")
+# @bot.event
+# async def on_slash_command_error(inter: disnake.CommandInter, error: commands.CommandError) -> None:
+#     logger.error(f"Команда [{inter.application_command.qualified_name}] для {inter.author.display_name} создала ошибку: {error}")
     # if not inter.response.is_done():
         # await inter.response.defer()
     # if isinstance(error, commands.CommandInvokeError):

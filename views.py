@@ -77,18 +77,18 @@ class LineView(disnake.ui.View):
     async def change(self, offset: int) -> None:
         self.index += offset
         voting: Voting.Voting  = await self.old_inter.bot.voting.get_voting(self.voting_id)
-        votes: Voting.Vote = await self.old_inter.bot.voting.get_votes_list(self.voting_id, (self.index - 1) * 20)
+        votes: list[Voting.Vote] = await self.old_inter.bot.voting.get_votes_list(self.voting_id, (self.index - 1) * 20)
         view = LineView(self.old_inter, self.voting_id, self.index)
         view.next.disabled = False
         view.previous.disabled = False
 
         if voting.anonym and not(await self.old_inter.bot.is_owner(self.old_inter.author)):
             await self.old_inter.edit_original_response("Данное голосование является аннонимным", view=None)
-            return
+            return None, None
 
         if len(votes) == 0:
             await self.old_inter.edit_original_response("Данное голосование пока что не имеет истории", view=None)
-            return
+            return None, None
 
         if len(votes) != 21:
             view.next.disabled = True
@@ -100,6 +100,7 @@ class LineView(disnake.ui.View):
             self.voting_id,
             voting.anonym
         )
+        print(view, embed)
         return view, embed
 
     @disnake.ui.button(label="Предыдущий", style=disnake.ButtonStyle.gray)
