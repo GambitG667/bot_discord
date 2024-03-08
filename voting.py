@@ -54,7 +54,7 @@ class Voting:
             return self.Vote(*t)
         
     async def get_votes(self, voting_id):
-        query = "select type, count(*) from (SELECT type FROM votes  WHERE voting_id = ? GROUP BY user_id HAVING max(created)) GROUP BY type"
+        query = "SELECT type, count(*) FROM (SELECT type FROM votes  WHERE voting_id = ? GROUP BY user_id HAVING max(created)) GROUP BY type"
         t = await self.db.async_get(query, (voting_id,))
         for_ = 0
         against = 0
@@ -65,3 +65,10 @@ class Voting:
                 case 1:
                     for_ = v[1]
         return against, for_
+    
+    async def get_votes_list(self, voting_id, start):
+        query = "SELECT * FROM votes WHERE voting_id = ? ORDER BY created DESC LIMIT ?, 21"
+        t = await self.db.async_get(query, (voting_id, start))
+        for i, vote in enumerate(t):
+            t[i] = [start + i + 1, self.Vote(*vote)]
+        return t

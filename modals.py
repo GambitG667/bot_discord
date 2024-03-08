@@ -1,3 +1,4 @@
+from __future__ import annotations
 import disnake
 from disnake.ext import commands
 from datetime import datetime
@@ -8,8 +9,12 @@ from embeds import *
 import logging
 logger = logging.getLogger(__name__)
 
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    pass
+
 class CreateModal(disnake.ui.Modal):
-    def __init__(self, anonym):
+    def __init__(self, anonym) -> None:
         self.anonym = anonym
         comp = [
             disnake.ui.TextInput(
@@ -32,7 +37,7 @@ class CreateModal(disnake.ui.Modal):
             components=comp
         )
 
-    async def callback(self, inter):
+    async def callback(self, inter: disnake.ModalInteraction) -> None:
         title = inter.text_values["title"]
         desc = inter.text_values["description"]
 
