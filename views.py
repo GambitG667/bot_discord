@@ -12,15 +12,15 @@ if TYPE_CHECKING:
     from voting import Voting
 
 class VotingView(disnake.ui.View):
-    def __init__(self, voting_id,  timeout = None) -> None:
+    def __init__(self, voting_id: int, timeout = None) -> None:
         super().__init__(timeout=timeout)
         self.voting_id = voting_id
 
-    async def vote(self, inter: disnake.MessageInteraction, type_, label: str) -> None:
+    async def vote(self, inter: disnake.MessageInteraction, type_: bool, button: disnake.Button) -> None:
         user = inter.author
-        vote = await inter.bot.voting.get_vote(inter.author.id, self.voting_id)
-        voting = await inter.bot.voting.get_voting(self.voting_id)
-        t = None
+        vote: Voting.Vote | None = await inter.bot.voting.get_vote(inter.author.id, self.voting_id)
+        voting: Voting.Voting = await inter.bot.voting.get_voting(self.voting_id)
+        t: bool | None = None
         if vote is not None:
             t = vote.type
 
@@ -29,20 +29,20 @@ class VotingView(disnake.ui.View):
             return
 
         if t == type_:
-            await inter.send(f"Вы уже проголосовали за {label}", ephemeral=True)
+            await inter.send(f"Вы уже проголосовали за {button.label}", ephemeral=True)
         else:
-            logger.info(f"{user.display_name} прологосовал за \"{label}\"")
-
-            await inter.send(f"Вы проголосовали за {label}", ephemeral=True)
+            logger.info(f"{user.display_name} прологосовал за \"{button.label}\"")
+            
+            await inter.send(f"Вы проголосовали за {button.label}", ephemeral=True)
             await inter.bot.voting.create_vote(inter.author.id, self.voting_id, type_)
 
     @disnake.ui.button(label="Согласен", style=disnake.ButtonStyle.green)
-    async def confirm(self, button, inter: disnake.MessageInteraction) -> None:
-        await self.vote(inter, True, button.label)
+    async def confirm(self, button: disnake.Button, inter: disnake.MessageInteraction) -> None:
+        await self.vote(inter, True, button)
 
     @disnake.ui.button(label="Не согласен", style=disnake.ButtonStyle.red)
     async def cancel(self, button: disnake.Button, inter: disnake.MessageInteraction) -> None:
-        await self.vote(inter, False, button.label)
+        await self.vote(inter, False, button)
 
     @disnake.ui.button(label="Окончить голосование", style=disnake.ButtonStyle.grey)
     async def stop_voting(self, button: disnake.Button, inter: disnake.MessageInteraction) -> None:

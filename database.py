@@ -17,18 +17,19 @@ from typing import Callable, Self
 class Database:
     def __init__(self, path: str) -> None:
         self.path = path
-        logger.debug("Иницилизация объекта базы данных")
+        logger.debug(f"Иницилизация объекта базы данных {self.path}")
     
     async def connect_database(self) -> None:
         await self.execute_async(self._connect)
 
     def _connect(self) -> None:
-        self.connect = sqlite3.connect(self.path, detect_types=sqlite3.PARSE_DECLTYPES, check_same_thread=False)
         if not os.path.isfile(self.path):
             logger.warning(f"Базы данных {self.path} не существует. В этом случае она будет создана")
+        self.connect = sqlite3.connect(self.path, detect_types=sqlite3.PARSE_DECLTYPES, check_same_thread=False)
 
-        with self.connect:
-            self.connect.executescript("""
+        with self.connect as connect:
+            logger.info("Создание таблиц, если их нет")
+            connect.executescript("""
             CREATE TABLE IF NOT EXISTS votings (
                 "id" INTEGER PRIMARY KEY AUTOINCREMENT,
                 "title" TEXT NOT NULL,
@@ -46,7 +47,6 @@ class Database:
                 "created" DATETIME NOT NULL
             );
             """)
-            logger.info("Создание таблиц базы данных если их нет")
 
     @classmethod
     async def open(cls, path: str) -> Self:
