@@ -1,6 +1,6 @@
 from __future__ import annotations
 from datetime import datetime
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
@@ -25,6 +25,16 @@ class Voting:
         type: bool
         created: datetime
 
+    @dataclass
+    class VoteWithIndex:
+        index: int
+        vote: Voting.Vote
+
+    @dataclass
+    class VotingWithIndex:
+        index: int
+        voting: Voting.Voting
+
     def __init__(self, db: Database):
         self.db = db
 
@@ -41,6 +51,13 @@ class Voting:
         t = await self.db.async_get_one(query, (id_,))
         if t is not None:
             return self.Voting(*t)
+        
+    async def get_votings_list(self, start) -> list[Voting.VotingWithIndex]:
+        query = "SELECT * FROM votings ORDER BY created DESC LIMIT ?, 21"
+        t = await self.db.async_get(query, (start,))
+        for i, voting in enumerate(t):
+            t[i] = Voting.VotingWithIndex(start + i + 1, self.Voting(*voting))
+        return t
 
     async def create_vote(self, user_id: int, voting_id: int, type_: bool) -> int:
         query = "INSERT INTO votes (user_id,voting_id,type,created) VALUES (?, ?, ?, ?)"
@@ -71,9 +88,9 @@ class Voting:
                     for_ = v[1]
         return against, for_
     
-    async def get_votes_list(self, voting_id: int, start: int) -> list[list[int, Vote]]:
+    async def get_votes_list(self, voting_id: int, start: int) -> list[Voting.VoteWithIndex]:
         query = "SELECT * FROM votes WHERE voting_id = ? ORDER BY created DESC LIMIT ?, 21"
         t = await self.db.async_get(query, (voting_id, start))
         for i, vote in enumerate(t):
-            t[i] = [start + i + 1, self.Vote(*vote)]
+            t[i] = Voting.VoteWithIndex(start + i + 1, self.Vote(*vote))
         return t

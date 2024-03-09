@@ -91,9 +91,20 @@ class Commons(commands.Cog):
     async def votingList(inter: disnake.CommandInter, id_ = Id) -> None:
         await inter.response.defer(ephemeral=True)
         if await check_voting(inter, id_):
-            view = LineView(inter, id_)
-            view, embed = (await view.change(0))
-            if view is not None:
+            view = LineVotesView(inter, id_)
+            embed = await view.change(0)
+            if embed is not None:
                 await inter.edit_original_response(content=None, view=view, embed=embed)
         else:
             await inter.edit_original_response(f"Голосование {id_} не найдено")
+
+    @voting.sub_command(
+        name="список",
+        description="Отображает список голосований"
+    )
+    async def votingsList(inter: disnake.CommandInter) -> None:
+        await inter.response.defer(ephemeral=True)
+        view = LineVotingsView(inter)
+        embed = await view.change(0)
+        if embed is not None:
+            await inter.edit_original_response(content=None, view=view, embed=embed)

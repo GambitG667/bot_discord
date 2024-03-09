@@ -11,7 +11,6 @@ from database import Database
 from commands import Commons
 
 logger = logging.getLogger(__name__)
-logger.debug("Логгер установлен")
 
 # Бот, который работает только с командами приложения
 bot = commands.InteractionBot(intents=disnake.Intents.all())
@@ -24,13 +23,20 @@ async def on_ready() -> None:
     logger.info(f"Бот {bot.user} готов!")
     bot.voting = Voting(await Database.open(args["database"][0]))
 
-# @bot.event
-# async def on_slash_command_error(inter: disnake.CommandInter, error: commands.CommandError) -> None:
-#     logger.error(f"Команда [{inter.application_command.qualified_name}] для {inter.author.display_name} создала ошибку: {error}")
-    # if not inter.response.is_done():
-        # await inter.response.defer()
-    # if isinstance(error, commands.CommandInvokeError):
-    #     await inter.edit_original_response("На данный момент бот работает очень плохо. Извините за неудобства.", ephemeral=True)
+@bot.event
+async def on_slash_command_error(inter: disnake.CommandInter, error: commands.CommandError) -> None:
+    command = inter.application_command
+    if command and command.has_error_handler():
+        return
+
+    cog = command.cog
+    if cog and cog.has_slash_error_handler():
+        return
+    
+    logger.error(
+        f"При выполнении команды [{inter.application_command.qualified_name}] для {inter.author.display_name} проигнорирована ошибка:",
+        exc_info=(type(error), error, error.__traceback__)
+    )
 
 @bot.event
 async def on_slash_command(inter: disnake.CommandInter) -> None:

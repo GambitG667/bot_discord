@@ -24,3 +24,5 @@ def setup_logger() -> None:
         streamHandler = logging.StreamHandler()
         streamHandler.setFormatter(formatter)
         logger.addHandler(streamHandler)
+
+    logger.debug("Логгер установлен")

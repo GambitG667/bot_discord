@@ -67,50 +67,74 @@ class VotingView(disnake.ui.View):
             )
             await inter.send(embed=embed)
 
-class LineView(disnake.ui.View):
-    def __init__(self, inter: disnake.MessageInteraction, voting_id: int, index: int = 1) -> None:
+class AbsList(disnake.ui.View):
+    def __init__(self, inter: disnake.MessageInteraction, index: int = 1, *, timeout: float | None = None) -> None:
         self.old_inter = inter
         self.index = index
-        self.voting_id = voting_id
-        super().__init__(timeout=None)
+        super().__init__(timeout=timeout)
 
     async def change(self, offset: int) -> None:
         self.index += offset
-        voting: Voting.Voting  = await self.old_inter.bot.voting.get_voting(self.voting_id)
-        votes: list[Voting.Vote] = await self.old_inter.bot.voting.get_votes_list(self.voting_id, (self.index - 1) * 20)
-        view = LineView(self.old_inter, self.voting_id, self.index)
-        view.next.disabled = False
-        view.previous.disabled = False
+        self.next.disabled = False
+        self.previous.disabled = False
 
-        if voting.anonym and not(await self.old_inter.bot.is_owner(self.old_inter.author)):
+    async def disable_buttons(self, len_: int) -> None:
+        if len_ != 21:
+            self.next.disabled = True
+        if self.index == 1:
+            self.previous.disabled = True
+    
+    @disnake.ui.button(label="Предыдущий", style=disnake.ButtonStyle.gray)
+    async def previous(self, button: disnake.Button, inter: disnake.MessageInteraction) -> None:
+        await inter.response.defer()
+        embed = await self.change(-1)
+        await self.old_inter.edit_original_response(content=None, embed=embed, view=self)
+
+    @disnake.ui.button(label="Следующий", style=disnake.ButtonStyle.gray)
+    async def next(self, button: disnake.Button, inter: disnake.MessageInteraction) -> None:
+        await inter.response.defer()
+        embed = await self.change(1)
+        await self.old_inter.edit_original_response(content=None, embed=embed, view=self)
+
+class LineVotesView(AbsList):
+    def __init__(self, inter: disnake.MessageInteraction, voting_id: int, index: int = 1) -> None:
+        self.voting_id = voting_id
+        super().__init__(inter, index, timeout=None)
+
+    async def change(self, offset: int) -> VotesListEmbed | None:
+        await super().change(offset)
+        voting: Voting.Voting  = await self.old_inter.bot.voting.get_voting(self.voting_id)
+        votes: list[Voting.VoteWithIndex] = await self.old_inter.bot.voting.get_votes_list(self.voting_id, (self.index - 1) * 20)
+        await self.disable_buttons(len(votes))
+
+        if voting.anonym and not self.old_inter.permissions.administrator:
             await self.old_inter.edit_original_response("Данное голосование является аннонимным", view=None)
-            return None, None
+            return
 
         if len(votes) == 0:
             await self.old_inter.edit_original_response("Данное голосование пока что не имеет истории", view=None)
-            return None, None
+            return
 
-        if len(votes) != 21:
-            view.next.disabled = True
-        if self.index == 1:
-            view.previous.disabled = True
         embed = VotesListEmbed(
             self.old_inter.bot,
             votes,
             self.voting_id,
             voting.anonym
         )
-        print(view, embed)
-        return view, embed
+        return embed
+    
+class LineVotingsView(AbsList):
+    async def change(self, offset: int) -> VotingsListEmbed | None:
+        await super().change(offset)
+        votings: list[Voting.VotingWithIndex] = await self.old_inter.bot.voting.get_votings_list((self.index - 1) * 20)
+        await self.disable_buttons(len(votings))
 
-    @disnake.ui.button(label="Предыдущий", style=disnake.ButtonStyle.gray)
-    async def previous(self, button: disnake.Button, inter: disnake.MessageInteraction) -> None:
-        await inter.response.defer()
-        view, embed = await self.change(-1)
-        await self.old_inter.edit_original_response(content=None, embed=embed, view=view)
-
-    @disnake.ui.button(label="Следующий", style=disnake.ButtonStyle.gray)
-    async def next(self, button: disnake.Button, inter: disnake.MessageInteraction) -> None:
-        await inter.response.defer()
-        view, embed = await self.change(1)
-        await self.old_inter.edit_original_response(content=None, embed=embed, view=view)
+        if len(votings) == 0:
+            await self.old_inter.edit_original_response("Пока что нет голосований", view=None)
+            return
+        
+        embed = VotingsListEmbed(
+            self.old_inter.bot,
+            votings
+        )
+        return embed
