@@ -51,16 +51,16 @@ class VotesListEmbed(disnake.Embed):
         self.set_footer(text=f"Голосование №{id_}{is_anonym}")
 
 class VotingsListEmbed(disnake.Embed):
-    def __init__(self, bot: commands.InteractionBot, votingsList: list[Voting.VotingWithIndex]) -> None:
+    def __init__(self, bot: commands.InteractionBot, votingsList: list[Voting.Voting]) -> None:
         super().__init__(title="Список голосований", color=disnake.Colour.red())
         for i, v in enumerate(votingsList):
             if i == 20:
                 break
 
-            t = [f"Открыто: <t:{int(v.voting.created.timestamp())}>."]
-            if v.voting.closed:
-                t.append(f"Закрыто: <t:{int(v.voting.closed.timestamp())}>.")
+            t = [f"Открыто: <t:{int(v.created.timestamp())}>."]
+            if v.closed:
+                t.append(f"Закрыто: <t:{int(v.closed.timestamp())}>.")
             
-            t.append(anonym(v.voting.anonym))
-            self.add_field(f"*{v.index}*. {bot.get_user(v.voting.author_id).display_name}: **{v.voting.title}**", " ".join(t), inline=False)
+            t.append(anonym(v.anonym))
+            self.add_field(f"*{v.id}*. {bot.get_user(v.author_id).display_name}: **{v.title}**", " ".join(t), inline=False)
         self.set_footer(text=bot.user.display_name)

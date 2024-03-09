@@ -126,7 +126,7 @@ class LineVotesView(AbsList):
 class LineVotingsView(AbsList):
     async def change(self, offset: int) -> VotingsListEmbed | None:
         await super().change(offset)
-        votings: list[Voting.VotingWithIndex] = await self.old_inter.bot.voting.get_votings_list((self.index - 1) * 20)
+        votings: list[Voting.Voting] = await self.old_inter.bot.voting.get_votings_list((self.index - 1) * 20)
         await self.disable_buttons(len(votings))
 
         if len(votings) == 0:

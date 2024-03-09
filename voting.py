@@ -30,11 +30,6 @@ class Voting:
         index: int
         vote: Voting.Vote
 
-    @dataclass
-    class VotingWithIndex:
-        index: int
-        voting: Voting.Voting
-
     def __init__(self, db: Database):
         self.db = db
 
@@ -52,11 +47,11 @@ class Voting:
         if t is not None:
             return self.Voting(*t)
         
-    async def get_votings_list(self, start) -> list[Voting.VotingWithIndex]:
+    async def get_votings_list(self, start) -> list[Voting.Voting]:
         query = "SELECT * FROM votings ORDER BY created DESC LIMIT ?, 21"
         t = await self.db.async_get(query, (start,))
         for i, voting in enumerate(t):
-            t[i] = Voting.VotingWithIndex(start + i + 1, self.Voting(*voting))
+            t[i] = self.Voting(*voting)
         return t
 
     async def create_vote(self, user_id: int, voting_id: int, type_: bool) -> int:
