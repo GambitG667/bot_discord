@@ -1,7 +1,6 @@
 import logging
 import sqlite3
 import asyncio
-from dataclasses import dataclass
 import os
 from datetime import datetime
 

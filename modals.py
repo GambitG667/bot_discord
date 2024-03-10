@@ -13,45 +13,84 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     pass
 
-class CreateModal(disnake.ui.Modal):
-    def __init__(self, anonym) -> None:
+class AbsTitleAndDescModal(disnake.ui.Modal):
+    def __init__(self, title: str, genitive_case: str, custom_id: str, anonym: bool) -> None:
         self.anonym = anonym
         comp = [
             disnake.ui.TextInput(
                 label = "Заголовок",
-                placeholder = "Напишите тему голосования",
+                placeholder = f"Напишите тему {genitive_case}",
                 custom_id = "title",
                 style=disnake.TextInputStyle.short,
                 max_length=20
             ),
             disnake.ui.TextInput(
                 label = "Описание",
-                placeholder = "Напишите полное описание голосования",
+                placeholder = f"Напишите полное описание {genitive_case}",
                 custom_id = "description",
                 style=disnake.TextInputStyle.long
             )
         ]
         super().__init__(
-            title="Голосование",
-            custom_id="voting",
+            title=title,
+            custom_id=custom_id,
             components=comp
         )
 
     async def callback(self, inter: disnake.ModalInteraction) -> None:
-        title = inter.text_values["title"]
-        desc = inter.text_values["description"]
+        self.title = inter.text_values["title"]
+        self.desc = inter.text_values["description"]
 
-        voting_id = await inter.bot.voting.start_voting(title, desc, inter.author.id, self.anonym)
+class CreateVotingModal(AbsTitleAndDescModal):
+    def __init__(self, anonym: bool) -> None:
+        super().__init__(
+            title="Голосование",
+            genitive_case="голосования",
+            custom_id="voting",
+            anonym=anonym
+        )
+
+    async def callback(self, inter: disnake.ModalInteraction) -> None:
+        await super().callback(inter)
+        bot: Bot = inter.bot
+        voting_id = await bot.voting.start_voting(self.title, self.desc, inter.author.id, self.anonym)
         view = VotingView(voting_id)
 
         embed = VotingEmbed(
             inter.author,
-            title,
-            desc,
+            self.title,
+            self.desc,
             voting_id,
             datetime.today(),
             self.anonym
         )
 
-        logger.info(f"{inter.author.display_name} начал голосование: {title} => {desc}")
+        logger.info(f"{inter.author.display_name} начал голосование №{voting_id}: {self.title}")
+        await inter.send("@everyone", embed=embed, view=view)
+
+class CreatePetitionModal(AbsTitleAndDescModal):
+    def __init__(self, anonym: bool) -> None:
+        super().__init__(
+            title="Петиция",
+            genitive_case="петиции",
+            custom_id="petition",
+            anonym=anonym
+        )
+
+    async def callback(self, inter: disnake.ModalInteraction) -> None:
+        await super().callback(inter)
+        bot: Bot = inter.bot
+        petition_id = await bot.voting.start_petition(self.title, self.desc, inter.author.id, self.anonym)
+        view = PetitionView(petition_id)
+
+        embed = PetitionEmbed(
+            inter.author,
+            self.title,
+            self.desc,
+            petition_id,
+            datetime.today(),
+            self.anonym
+        )
+
+        logger.info(f"{inter.author.display_name} начал петицию №{petition_id}: {self.title}")
         await inter.send("@everyone", embed=embed, view=view)
