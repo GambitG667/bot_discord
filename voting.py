@@ -30,6 +30,28 @@ class Voting:
         index: int
         vote: Voting.Vote
 
+    @dataclass
+    class Petition:
+        id: int
+        title: str
+        description: str
+        author_id: int
+        anonym: bool
+        created: datetime
+        closed: datetime | None
+
+    @dataclass
+    class Sign:
+        id: int
+        user_id: int
+        voting_id: int
+        created: datetime
+
+    @dataclass
+    class SignWithIndex:
+        index: int
+        sign: Voting.Sign
+
     def __init__(self, db: Database):
         self.db = db
 

@@ -40,12 +40,18 @@ async def on_slash_command_error(inter: disnake.CommandInter, error: commands.Co
 
 @bot.event
 async def on_slash_command(inter: disnake.CommandInter) -> None:
-    params = (f"{k}: {v}" for k, v in inter.filled_options.items())
-    logger.info(f"{inter.author.display_name} запросил комманду [{inter.application_command.qualified_name}] с параметрами {', '.join(params)}")
+    params = list(f"{k}: {v}" for k, v in inter.filled_options.items())
+    t = [f"{inter.author.display_name} запросил комманду [{inter.application_command.qualified_name}]"]
+    if len(params) != 0:
+        t.append(f"с параметрами {', '.join(params)}")
+    logger.info(" ".join(t))
 
 @bot.event
 async def on_slash_command_completion(inter: disnake.CommandInter) -> None:
-    params = (f"{k}: {v}" for k, v in inter.filled_options.items())
-    logger.info(f"Для {inter.author.display_name} команда [{inter.application_command.qualified_name}] была выполнена успешно с параметрами {', '.join(params)}")
+    params = list(f"{k}: {v}" for k, v in inter.filled_options.items())
+    t = [f"Для {inter.author.display_name} команда [{inter.application_command.qualified_name}] была выполнена успешно"]
+    if len(params) != 0:
+        t.append(f"с параметрами {', '.join(params)}")
+    logger.info(" ".join(t))
 
 bot.run(TOKEN)
