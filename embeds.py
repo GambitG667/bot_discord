@@ -9,6 +9,7 @@ logger = logging.getLogger(__name__)
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from voting import VotingMaker
+    from main import Bot
 
 def anonym(bool: bool) -> str:
     text = ""
@@ -52,7 +53,7 @@ class PetitionResultsEmbed(disnake.Embed):
         self.set_footer(text=f"Петиция №{id_} {is_anonym}")
 
 class VotesListEmbed(disnake.Embed):
-    def __init__(self, bot: commands.InteractionBot, votesList: list[VotingMaker.VoteWithIndex], id_: int, is_anonym: bool = False) -> None:
+    def __init__(self, bot: Bot, voting: VotingMaker.Voting, votesList: list[VotingMaker.VoteWithIndex], id_: int, is_anonym: bool = False) -> None:
         is_anonym = anonym(is_anonym)
 
         super().__init__(title=f"Список голосов", color=disnake.Colour.red())
@@ -63,10 +64,12 @@ class VotesListEmbed(disnake.Embed):
             if v.vote.type:
                 t = "Согласен"
             self.add_field(f"*{v.index}*. **{bot.get_user(v.vote.user_id).display_name}**: {t}", f"<t:{int(v.vote.created.timestamp())}>", inline=False)
+        author = bot.get_user(voting.author_id)
+        self.set_author(name=f"{author.display_name}", icon_url=author.display_avatar.url)
         self.set_footer(text=f"Голосование №{id_} {is_anonym}")
 
 class SignsListEmbed(disnake.Embed):
-    def __init__(self, bot: commands.InteractionBot, signsList: list[VotingMaker.SignWithIndex], id_: int, is_anonym: bool = False) -> None:
+    def __init__(self, bot: Bot, petition: VotingMaker.Petition, signsList: list[VotingMaker.SignWithIndex], id_: int, is_anonym: bool = False) -> None:
         is_anonym = anonym(is_anonym)
 
         super().__init__(title="Список подписей", color=disnake.Colour.red())
@@ -75,6 +78,8 @@ class SignsListEmbed(disnake.Embed):
                 break
 
             self.add_field(f"*{v.index}*. **{bot.get_user(v.sign.user_id).display_name}**", f"<t:{int(v.sign.created.timestamp())}>", inline=False)
+        author = bot.get_user(petition.author_id)
+        self.set_author(name=f"{author.display_name}", icon_url=author.display_avatar.url)
         self.set_footer(text=f"Петиция №{id_} {is_anonym}")
 
 class VotingsListEmbed(disnake.Embed):

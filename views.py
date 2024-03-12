@@ -169,6 +169,7 @@ class LineVotesView(AbsList):
 
         embed = VotesListEmbed(
             self.old_inter.bot,
+            voting,
             votes,
             self.voting_id,
             voting.anonym
