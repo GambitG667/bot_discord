@@ -1,14 +1,21 @@
 import disnake
 from disnake.ext import commands
-from config import TOKEN
 import logging
 from argparser import args
 from log import setup_logger
+import os
+from dotenv import load_dotenv
+load_dotenv()
 setup_logger()
 
 from voting import VotingMaker
 from database import Database
 from commands import Commons
+
+token_name: str = args.token
+token = os.getenv(token_name)
+if token is None:
+    raise ValueError(f"Токен {token_name} не обнаружен")
 
 logger = logging.getLogger(__name__)
 
@@ -22,7 +29,7 @@ class Bot(commands.InteractionBot):
 
     async def on_ready(self) -> None:
         logger.info(f"Бот {bot.user} готов!")
-        self.voting = VotingMaker(await Database.open(args["database"][0]))
+        self.voting = VotingMaker(await Database.open(args.database))
 
     async def on_slash_command_error(self, inter: disnake.CommandInter, error: commands.CommandError) -> None:
         command = inter.application_command
@@ -53,4 +60,4 @@ class Bot(commands.InteractionBot):
         logger.info(" ".join(t))
 
 bot = Bot()
-bot.run(TOKEN)
+bot.run(token)

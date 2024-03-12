@@ -17,7 +17,7 @@
             "type": "debugpy",
             "request": "launch",
             "program": "${workspaceFolder}/main.py",
-            "args": ["--database", "test.db"],
+            "args": ["--database", "test.db", "--token", "TOKEN_TEST", "--logger-level", "DEBUG"],
             "console": "integratedTerminal",
             "justMyCode": true
         }

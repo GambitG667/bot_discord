@@ -2,4 +2,4 @@ __pycache__/
 *.swp
 bot.log
 *.db
-d
+.env

@@ -4,8 +4,22 @@ from argparser import args
 # Создаём логгер для root дериктории
 def setup_logger() -> None:
     logger = logging.getLogger()
-    logger.setLevel(logging.DEBUG)
+    level = None
+    match args.logger_level:
+        case "DEBUG":
+            level = logging.DEBUG
+        case "INFO":
+            level = logging.INFO
+        case "WARNING":
+            level = logging.WARNING
+        case "ERROR":
+            level = logging.ERROR
+        case "CRITICAL":
+            level = logging.CRITICAL
 
+    logger.setLevel(level)
+
+    logging.getLogger("asyncio").setLevel(logging.WARNING)
     logging.getLogger("aiosqlite").setLevel(logging.INFO)
     logging.getLogger("disnake").setLevel(logging.WARNING)
     
@@ -15,12 +29,12 @@ def setup_logger() -> None:
         style="{"
     )
 
-    if args["out"]:
+    if args.out:
         fileHandler = logging.FileHandler("bot.log", encoding="utf-8")
         fileHandler.setFormatter(formatter)
         logger.addHandler(fileHandler)
 
-    if args["out_file"]:
+    if args.out_file:
         streamHandler = logging.StreamHandler()
         streamHandler.setFormatter(formatter)
         logger.addHandler(streamHandler)
