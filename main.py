@@ -12,6 +12,9 @@ from voting import VotingMaker
 from database import Database
 from commands import Commons
 
+from views import *
+from embeds import *
+
 token_name: str = args.token
 token = os.getenv(token_name)
 if token is None:
@@ -58,6 +61,80 @@ class Bot(commands.InteractionBot):
         if len(params) != 0:
             t.append(f"с параметрами {', '.join(params)}")
         logger.info(" ".join(t))
+
+    async def vote(self, inter: disnake.Interaction, voting: VotingMaker.Voting, type_: bool, label: str) -> None:
+        user = inter.author
+        vote = await bot.voting.get_vote(inter.author.id, voting.id)
+        t: bool | None = None
+        if vote is not None:
+            t = vote.type
+
+        if voting.closed is not None:
+            await inter.send(f"Голосование закрыто", ephemeral=True)
+            return
+
+        if t == type_:
+            await inter.send(f"Вы уже проголосовали за {label}", ephemeral=True)
+            return
+        logger.info(f"{user.display_name} прологосовал за \"{label}\" в голосовании №{voting.id}: {voting.title}")
+        
+        await inter.send(f"Вы проголосовали за {label}", ephemeral=True)
+        await bot.voting.create_vote(inter.author.id, voting.id, type_)
+
+    async def stop_voting(self, inter: disnake.Interaction, voting: VotingMaker.Voting, send_embed: bool = False) -> None:
+        if voting.closed is not None:
+            await inter.send("Голосование уже было закрыто", ephemeral=True)
+            return
+
+        if inter.permissions.administrator or inter.author.id == voting.author_id:
+            await bot.voting.close_voting(voting.id)
+            logger.info(f"{inter.author.display_name} окончил голосование №{voting.id}")
+            if send_embed:
+                count = await bot.voting.get_votes(voting.id)
+                embed = ResultsEmbed(
+                    bot.get_user(voting.author_id),
+                    voting,
+                    count
+                )
+                await inter.send(embed=embed)
+        else:
+            await inter.send("У вас нет прав чтобы закрыть петицию", ephemeral=True)
+
+    async def sign(self, inter: disnake.Interaction, petition: VotingMaker.Petition):
+        user = inter.author
+        sign = await bot.voting.get_sign(inter.author.id, petition.id)
+
+        if petition.closed is not None:
+            await inter.send(f"Петиция закрыта", ephemeral=True)
+            return
+
+        if sign is not None:
+            await inter.send(f"Вы уже подписывали петицию", ephemeral=True)
+            return
+        logger.info(f"{user.display_name} подписал петицию №{petition.id}: {petition.title}")
+        
+        await inter.send(f"Вы подписали петицию", ephemeral=True)
+        await bot.voting.create_sign(inter.author.id, petition.id)
+
+    async def stop_petition(self, inter: disnake.Interaction, petition: VotingMaker.Petition, send_embed: bool = False) -> None:
+        await bot.voting.get_petition(petition.id)
+        if petition.closed is not None:
+            await inter.send("Петиция уже была закрыта", ephemeral=True)
+            return
+
+        if inter.permissions.administrator or inter.author.id == petition.author_id:
+            petition = await bot.voting.close_petition(petition.id)
+            logger.info(f"{inter.author.display_name} окончил петицию №{petition.id}")
+            signs_count = await bot.voting.get_signs(petition.id)
+            if send_embed:
+                embed = ResultsEmbed(
+                    bot.get_user(petition.author_id),
+                    petition,
+                    signs_count
+                )
+                await inter.send(embed=embed)
+        else:
+            await inter.send("У вас нет прав чтобы закрыть петицию", ephemeral=True)
 
 bot = Bot()
 bot.run(token)

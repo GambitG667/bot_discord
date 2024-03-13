@@ -53,19 +53,15 @@ class CreateVotingModal(AbsTitleAndDescModal):
     async def callback(self, inter: disnake.ModalInteraction) -> None:
         await super().callback(inter)
         bot: Bot = inter.bot
-        voting_id = await bot.voting.start_voting(self.title, self.desc, inter.author.id, self.anonym)
-        view = VotingView(voting_id)
+        voting = await bot.voting.start_voting(self.title, self.desc, inter.author.id, self.anonym)
+        view = VotingView(voting.id)
 
-        embed = VotingEmbed(
+        embed = ActivityEmbed(
             inter.author,
-            self.title,
-            self.desc,
-            voting_id,
-            datetime.today(),
-            self.anonym
+            voting
         )
 
-        logger.info(f"{inter.author.display_name} начал голосование №{voting_id}: {self.title}")
+        logger.info(f"{inter.author.display_name} начал голосование №{voting.id}: {self.title}")
         await inter.send("@everyone", embed=embed, view=view)
 
 class CreatePetitionModal(AbsTitleAndDescModal):
@@ -80,17 +76,13 @@ class CreatePetitionModal(AbsTitleAndDescModal):
     async def callback(self, inter: disnake.ModalInteraction) -> None:
         await super().callback(inter)
         bot: Bot = inter.bot
-        petition_id = await bot.voting.start_petition(self.title, self.desc, inter.author.id, self.anonym)
-        view = PetitionView(petition_id)
+        petition = await bot.voting.start_petition(self.title, self.desc, inter.author.id, self.anonym)
+        view = PetitionView(petition.id)
 
-        embed = PetitionEmbed(
+        embed = ActivityEmbed(
             inter.author,
-            self.title,
-            self.desc,
-            petition_id,
-            datetime.today(),
-            self.anonym
+            petition
         )
 
-        logger.info(f"{inter.author.display_name} начал петицию №{petition_id}: {self.title}")
+        logger.info(f"{inter.author.display_name} начал петицию №{petition.id}: {self.title}")
         await inter.send("@everyone", embed=embed, view=view)
