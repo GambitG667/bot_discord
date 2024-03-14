@@ -25,17 +25,17 @@ def get_footer(activity: VotingMaker.Voting | VotingMaker.Petition):
 
 class ActivityEmbed(disnake.Embed):
     def __init__(self, author: disnake.User, activity: VotingMaker.Voting | VotingMaker.Petition) -> None:
-        anonym = anonym(activity.anonym)
+        anon = anonym(activity.anonym)
 
         super().__init__(title=activity.title, description=activity.description, timestamp=activity.created, color=disnake.Colour.red())
         self.set_author(name=f"{author.display_name}", icon_url=author.display_avatar.url)
-        self.set_footer(text=f"{get_footer(activity)} №{activity.id} {anonym}")
+        self.set_footer(text=f"{get_footer(activity)} №{activity.id} {anon}")
 
 class ResultsEmbed(disnake.Embed):
     def __init__(self, author: disnake.User, activity: VotingMaker.Voting | VotingMaker.Petition, count: VotingMaker.VotesCount | VotingMaker.SignsCount) -> None:
         anon = anonym(activity.anonym)
 
-        super().__init__(title=activity.title, description=activity.description, timestamp=activity.closed if activity.closed is not None else datetime.today(), color=disnake.Colour.red())
+        super().__init__(title=activity.title, description=activity.description, timestamp=activity.created, color=disnake.Colour.red())
         if isinstance(activity, VotingMaker.Voting):
             self.add_field("Согласны", count.to, inline=True)
             self.add_field("Не согласны", count.against, inline=True)

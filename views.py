@@ -19,19 +19,19 @@ class VotingView(disnake.ui.View):
     @disnake.ui.button(label="Согласен", style=disnake.ButtonStyle.green)
     async def confirm(self, button: disnake.Button, inter: disnake.MessageInteraction) -> None:
         bot: Bot = inter.bot
-        voting = bot.voting.get_voting(self.voting_id)
+        voting = await bot.voting.get_voting(self.voting_id)
         await bot.vote(inter, voting, True, button.label)
 
     @disnake.ui.button(label="Не согласен", style=disnake.ButtonStyle.red)
     async def cancel(self, button: disnake.Button, inter: disnake.MessageInteraction) -> None:
         bot: Bot = inter.bot
-        voting = bot.voting.get_voting(self.voting_id)
+        voting = await bot.voting.get_voting(self.voting_id)
         await bot.vote(inter, voting, False, button.label)
 
     @disnake.ui.button(label="Окончить голосование", style=disnake.ButtonStyle.grey)
     async def stop_voting(self, button: disnake.Button, inter: disnake.MessageInteraction) -> None:
         bot: Bot = inter.bot
-        voting = bot.voting.get_voting(self.voting_id)
+        voting = await bot.voting.get_voting(self.voting_id)
         await bot.stop_voting(inter, voting, True)
 
 class PetitionView(disnake.ui.View):
@@ -42,13 +42,13 @@ class PetitionView(disnake.ui.View):
     @disnake.ui.button(label="Подписать", style=disnake.ButtonStyle.blurple)
     async def sign(self, button: disnake.Button, inter: disnake.MessageInteraction) -> None:
         bot: Bot = inter.bot
-        petition = bot.voting.get_petition(self.petition_id)
+        petition = await bot.voting.get_petition(self.petition_id)
         await bot.sign(inter, petition)
 
     @disnake.ui.button(label="Окончить петицию", style=disnake.ButtonStyle.grey)
     async def stop_petition(self, button: disnake.Button, inter: disnake.MessageInteraction) -> None:
         bot: Bot = inter.bot
-        petition = bot.voting.get_petition(self.petition_id)
+        petition = await bot.voting.get_petition(self.petition_id)
         await bot.stop_petition(inter, petition, True)
 
 class AbsList(disnake.ui.View):
@@ -102,11 +102,11 @@ class ActivesListView(AbsList):
         await self.disable_buttons(len(actives))
 
         if activity.anonym and not self.old_inter.permissions.administrator:
-            await self.old_inter.edit_original_response(self.no_actives_resp, view=None)
+            await self.old_inter.send(self.no_actives_resp, ephemeral=True)
             return
 
         if len(actives) == 0:
-            await self.old_inter.edit_original_response(self.anonym_resp, view=None)
+            await self.old_inter.send(self.anonym_resp, ephemeral=True)
             return
 
         embed = ActivesListEmbed(
@@ -134,7 +134,7 @@ class ActivitiesListView(AbsList):
         await self.disable_buttons(len(activities))
 
         if len(activities) == 0:
-            await self.old_inter.edit_original_response(self.no_activities_resp, view=None)
+            await self.old_inter.send(self.no_activities_resp, ephemeral=True)
             return
         
         embed = ActivitiesListEmbed(
