@@ -70,9 +70,10 @@ class ActivitiesListEmbed(disnake.Embed):
         title = ["Список"]
         if len(types_set) == 1:
             a = types_set.pop()
-            if isinstance(a, VotingMaker.Voting):
+            print(a)
+            if a is VotingMaker.Voting:
                 title.append("голосований")
-            else:
+            elif a is VotingMaker.Petition:
                 title.append("петиций")
         super().__init__(title=" ".join(title), color=disnake.Colour.red())
         for i, a in enumerate(activitiesList):
