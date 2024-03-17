@@ -81,56 +81,73 @@ class AbsList(disnake.ui.View):
         await self.old_inter.edit_original_response(content=None, embed=embed, view=self)
 
 class ActivesListView(AbsList):
-    def __init__(self, inter: disnake.MessageInteraction, activity: VotingMaker.Voting | VotingMaker.Petition, index: int = 1) -> None:
-        self.no_actives_resp = "Данная петиция пока что не имеет подписей"
-        self.anonym_resp = "Данная петиция является аннонимной"
+    def __init__(self, inter: disnake.MessageInteraction, activity: VotingMaker.Voting | VotingMaker.Petition | str, index: int = 1, user: disnake.Member | None = None) -> None:
+        self.no_actives_resp = "Данный пользователь не имеет активов"
+        self.anonym_resp = None
         if isinstance(activity, VotingMaker.Voting):
             self.no_actives_resp = "Данное голосование пока что не имеет голосов"
             self.anonym_resp = "Данное голосование является аннонимным"
+        elif isinstance(activity, VotingMaker.Petition):
+            self.no_actives_resp = "Данная петиция пока что не имеет подписей"
+            self.anonym_resp = "Данная петиция является аннонимной"
         self.activity = activity
+        self.user = user
         super().__init__(inter, index, timeout=None)
 
     async def change(self, offset: int) -> ActivesListEmbed | None:
         await super().change(offset)
         bot: Bot = self.old_inter.bot
+        start = (self.index - 1) * 20
+        activity = None
         if isinstance(self.activity, VotingMaker.Voting):
             activity = await bot.voting.get_voting(self.activity.id)
-            actives = await bot.voting.get_votes_list(self.activity.id, (self.index - 1) * 20)
-        else:
+            actives = await bot.voting.get_votes_list(self.activity.id, start)
+        elif isinstance(self.activity, VotingMaker.Petition):
             activity = await bot.voting.get_petition(self.activity.id)
-            actives = await bot.voting.get_signs_list(self.activity.id, (self.index - 1) * 20)
+            actives = await bot.voting.get_signs_list(self.activity.id, start)
+        else:
+            actives = await bot.voting.get_actives_by_user(self.user.id, start, self.activity, self.old_inter.permissions.administrator)
         await self.disable_buttons(len(actives))
 
-        if activity.anonym and not self.old_inter.permissions.administrator:
-            await self.old_inter.send(self.no_actives_resp, ephemeral=True)
+        if self.user is None and activity.anonym and not self.old_inter.permissions.administrator:
+            await self.old_inter.send(self.anonym_resp, ephemeral=True)
             return
 
         if len(actives) == 0:
-            await self.old_inter.send(self.anonym_resp, ephemeral=True)
+            await self.old_inter.send(self.no_actives_resp, ephemeral=True)
             return
 
         embed = ActivesListEmbed(
             bot,
             activity,
             actives,
+            start,
+            self.user
         )
         return embed
     
 class ActivitiesListView(AbsList):
-    def __init__(self, inter: disnake.MessageInteraction, activities_type: type[VotingMaker.Voting | VotingMaker.Petition], index: int = 1) -> None:
+    def __init__(self, inter: disnake.MessageInteraction, activities_type: type[VotingMaker.Voting | VotingMaker.Petition] | str, index: int = 1, user: disnake.Member | None = None) -> None:
         super().__init__(inter, index, timeout=None)
-        self.no_activities_resp = "Пока что нет петиций"
+        self.no_activities_resp = "Пользователь пока что ничего не создавал"
         if activities_type == VotingMaker.Voting:
             self.no_activities_resp = "Пока что нет голосований"
+        elif activities_type == VotingMaker.Petition:
+            self.no_activities_resp = "Пока что нет петиций"
         self.activities_type = activities_type
+        self.user = user
 
     async def change(self, offset: int) -> ActivitiesListEmbed | None:
         await super().change(offset)
         bot: Bot = self.old_inter.bot
-        if self.activities_type == VotingMaker.Voting:
-            activities = await bot.voting.get_votings_list((self.index - 1) * 20)
+        start = (self.index - 1) * 20
+        if self.user is None:
+            if self.activities_type == VotingMaker.Voting:
+                activities = await bot.voting.get_votings_list(start)
+            elif self.activities_type == VotingMaker.Petition:
+                activities = await bot.voting.get_petitions_list(start)
         else:
-            activities = await bot.voting.get_petitions_list((self.index - 1) * 20)
+            activities = await bot.voting.get_activities_by_user(self.user.id, start, self.activities_type)
         await self.disable_buttons(len(activities))
 
         if len(activities) == 0:
@@ -139,6 +156,7 @@ class ActivitiesListView(AbsList):
         
         embed = ActivitiesListEmbed(
             bot,
-            activities
+            activities,
+            self.user
         )
         return embed

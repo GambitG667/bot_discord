@@ -14,12 +14,15 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from main import Bot
 
-_voting_id = commands.Param(name="id_голосования", description="Индивидуальный номер голосования", ge=1)
+_voting_id = commands.Param(name="номер_голосования", description="Индивидуальный номер голосования", ge=1)
 _voting_anonym = commands.Param(name="анонимное", description="Если голосование аннонимное, то невозможно будет узнать имена проголосовавших", choices=["да", "нет"], default="нет")
 _vote_types = commands.Param(name="тип_голоса", description="Тип голоса который вы хотите оставить", choices={"согласен": "Согласен", "не согласен": "Не согласен"})
 
-_petition_id = commands.Param(name="id_петиции", description="Индивидуальный номер петиции", ge=1)
+_petition_id = commands.Param(name="номер_петиции", description="Индивидуальный номер петиции", ge=1)
 _petition_anonym = commands.Param(name="анонимная", description="Если петиция аннонимная, то невозможно будет узнать имена подписавших", choices=["да", "нет"], default="нет")
+
+_activity_filter = commands.Param(name="активности", description="Фильтр активностей", choices=["голосования", "петиции", "все"], default="все")
+_actives_filter = commands.Param(name="активы", description="Фильтр активов", choices=["голоса", "подписи", "все"], default="все")
 
 async def check_voting(inter: disnake.CommandInter, id_: int) -> bool:
     bot: Bot = inter.bot
@@ -252,3 +255,32 @@ class Commons(commands.Cog):
             await inter.send(f"Петиция №{id_} не найдена", ephemeral=True)
             return
         await bot.sign(inter, petition)
+
+    @commands.slash_command(
+        name="пользователи",
+        dm_permission=False
+    )
+    async def users(inter: disnake.CommandInter, *args) -> None:
+        pass
+
+    @users.sub_command(
+        name="история",
+        description="Показывает историю подписей и голосов пользователя"
+    )
+    async def history(inter: disnake.CommandInter, user: disnake.Member, filter = _actives_filter) -> None:
+        bot: Bot = inter.bot
+        view = ActivesListView(inter, filter, user=user)
+        embed = await view.change(0)
+        if embed is not None:
+            await inter.send(content=None, view=view, embed=embed, ephemeral=True)
+
+    @users.sub_command(
+        name="созданные",
+        description="Показывает список голосований и петиций, созданные этим пользователем"
+    )
+    async def created(inter: disnake.CommandInter, user: disnake.Member, filter = _activity_filter) -> None:
+        bot: Bot = inter.bot
+        view = ActivitiesListView(inter, filter, user=user)
+        embed = await view.change(0)
+        if embed is not None:
+            await inter.send(content=None, view=view, embed=embed, ephemeral=True)

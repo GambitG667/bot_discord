@@ -17,19 +17,13 @@ def anonym(bool: bool) -> str:
         text = "(Анонимно)"
     return text
 
-def get_footer(activity: VotingMaker.Voting | VotingMaker.Petition):
-    if isinstance(activity, VotingMaker.Voting):
-        return "Голосование"
-    else:
-        return "Петиция"
-
 class ActivityEmbed(disnake.Embed):
     def __init__(self, author: disnake.User, activity: VotingMaker.Voting | VotingMaker.Petition) -> None:
         anon = anonym(activity.anonym)
 
         super().__init__(title=activity.title, description=activity.description, timestamp=activity.created, color=disnake.Colour.red())
-        self.set_author(name=f"{author.display_name}", icon_url=author.display_avatar.url)
-        self.set_footer(text=f"{get_footer(activity)} №{activity.id} {anon}")
+        self.set_author(name=author.display_name, icon_url=author.display_avatar.url)
+        self.set_footer(text=f"{str(activity).capitalize()} №{activity.id} {anon}")
 
 class ResultsEmbed(disnake.Embed):
     def __init__(self, author: disnake.User, activity: VotingMaker.Voting | VotingMaker.Petition, count: VotingMaker.VotesCount | VotingMaker.SignsCount) -> None:
@@ -41,40 +35,42 @@ class ResultsEmbed(disnake.Embed):
             self.add_field("Не согласны", count.against, inline=True)
         else:
             self.add_field("Подписи", count.count, inline=False)
-        self.set_author(name=f"{author.display_name}", icon_url=author.display_avatar.url)
-        self.set_footer(text=f"{get_footer(activity)} №{activity.id} {anon}")  
+        self.set_author(name=author.display_name, icon_url=author.display_avatar.url)
+        self.set_footer(text=f"{str(activity).capitalize()} №{activity.id} {anon}")  
 
 class ActivesListEmbed(disnake.Embed):
-    def __init__(self, bot: Bot, activity: VotingMaker.Voting | VotingMaker.Petition, actives_list: list[VotingMaker.VoteWithIndex | VotingMaker.SignWithIndex]) -> None:
-        anon = anonym(activity.anonym)
+    def __init__(self, bot: Bot, activity: VotingMaker.Voting | VotingMaker.Petition | None, actives_list: list[VotingMaker.Vote | VotingMaker.Sign], start: int, user: disnake.Member | None = None) -> None:
+        if user is None:
+            anon = anonym(activity.anonym)
 
-        super().__init__(title=activity.title, description=activity.description, timestamp=activity.created, color=disnake.Colour.red())
+            super().__init__(title=activity.title, description=activity.description, timestamp=activity.created, color=disnake.Colour.red())
+            self.set_footer(text=f"{str(activity).capitalize()}№{activity.id} {anon}")
+            user = bot.get_user(activity.author_id)
+        else:
+            super().__init__(color=disnake.Colour.red())
+            self.set_footer(text=bot.user.display_name)
+
         for i, a in enumerate(actives_list):
             if i == 20:
                 break
-            if isinstance(a, VotingMaker.VoteWithIndex):
-                t = "Не согласен"
-                if a.vote.type:
-                    t = "Согласен"
-                self.add_field(f"Голос №*{a.index}*. **{bot.get_user(a.vote.user_id).display_name}**: {t}", f"<t:{int(a.vote.created.timestamp())}>", inline=False)
-                
+            if isinstance(a, VotingMaker.Vote):
+                t = ": Не согласен"
+                if a.type:
+                    t = ": Согласен"
+                id_ = a.voting_id
             else:
-                self.add_field(f"Подпись №*{a.index}*. **{bot.get_user(a.sign.user_id).display_name}**", f"<t:{int(a.sign.created.timestamp())}>", inline=False)
-        author = bot.get_user(activity.author_id)
-        self.set_author(name=f"{author.display_name}", icon_url=author.display_avatar.url)
-        self.set_footer(text=f"{get_footer(activity)}№{activity.id} {anon}")
+                t = ""
+                id_ = a.petition_id
+            self.add_field(f"{str(a).capitalize()} №*{id_}*. **{bot.get_user(a.user_id).display_name}**{t}", f"<t:{int(a.created.timestamp())}>", inline=False)
+        self.set_author(name=user.display_name, icon_url=user.display_avatar.url)
 
 class ActivitiesListEmbed(disnake.Embed):
-    def __init__(self, bot: commands.InteractionBot, activitiesList: list[VotingMaker.Voting | VotingMaker.Petition]) -> None:
+    def __init__(self, bot: commands.InteractionBot, activitiesList: list[VotingMaker.Voting | VotingMaker.Petition], user: disnake.Member | None = None) -> None:
         types_set = set(map(type, activitiesList))
         title = ["Список"]
-        if len(types_set) == 1:
+        if len(types_set) == 1 and user is None:
             a = types_set.pop()
-            print(a)
-            if a is VotingMaker.Voting:
-                title.append("голосований")
-            elif a is VotingMaker.Petition:
-                title.append("петиций")
+            title.append(a.__str__(None)[:-1] + "й")
         super().__init__(title=" ".join(title), color=disnake.Colour.red())
         for i, a in enumerate(activitiesList):
             if i == 20:
@@ -85,5 +81,7 @@ class ActivitiesListEmbed(disnake.Embed):
                 t.append(f"Закрыто: <t:{int(a.closed.timestamp())}>.")
             
             t.append(anonym(a.anonym))
-            self.add_field(f"*{get_footer(a)} №{a.id}*. {bot.get_user(a.author_id).display_name}: **{a.title}**", " ".join(t), inline=False)
+            self.add_field(f"*{str(a).capitalize()} №{a.id}*. {bot.get_user(a.author_id).display_name}: **{a.title}**", " ".join(t), inline=False)
+        if user is not None:
+            self.set_author(name=user.display_name, icon_url=user.display_avatar.url)
         self.set_footer(text=bot.user.display_name)
