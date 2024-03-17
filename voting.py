@@ -2,7 +2,7 @@ from __future__ import annotations
 from datetime import datetime
 from dataclasses import dataclass, field
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 if TYPE_CHECKING:
     from database import Database
 
@@ -17,6 +17,9 @@ class VotingMaker:
         created: datetime
         closed: datetime | None
 
+        def __str__(self):
+            return "голосование"
+
     @dataclass
     class Vote:
         id: int
@@ -25,10 +28,8 @@ class VotingMaker:
         type: bool
         created: datetime
 
-    @dataclass
-    class VoteWithIndex:
-        index: int
-        vote: VotingMaker.Vote
+        def __str__(self):
+            return "голос"
 
     @dataclass
     class VotesCount:
@@ -45,21 +46,27 @@ class VotingMaker:
         created: datetime
         closed: datetime | None
 
+        def __str__(self):
+            return "петиция"
+
     @dataclass
     class Sign:
         id: int
         user_id: int
-        voting_id: int
+        petition_id: int
         created: datetime
 
-    @dataclass
-    class SignWithIndex:
-        index: int
-        sign: VotingMaker.Sign
+        def __str__(self):
+            return "подпись"
 
     @dataclass
     class SignsCount:
         count: int
+
+    @staticmethod
+    async def _map_list(t: list[list[any]], cls: type[Voting | Vote | Petition | Sign]) -> None:
+        for i, sth in enumerate(t):
+            t[i] = cls(*sth)
 
     def __init__(self, db: Database):
         self.db = db
@@ -81,10 +88,9 @@ class VotingMaker:
             return self.Voting(*t)
         
     async def get_votings_list(self, start) -> list[Voting]:
-        query = "SELECT * FROM votings ORDER BY created DESC LIMIT ?, 21"
+        query = "SELECT * FROM votings ORDER BY id DESC LIMIT ?, 21"
         t = await self.db.async_get(query, (start,))
-        for i, voting in enumerate(t):
-            t[i] = self.Voting(*voting)
+        await self._map_list(t, self.Voting)
         return t
 
     async def create_vote(self, user_id: int, voting_id: int, type_: bool) -> Vote:
@@ -93,7 +99,7 @@ class VotingMaker:
         return await self.get_vote_by_id(id_)
 
     async def get_vote(self, user_id: int, voting_id: int) -> Vote | None:
-        query = "SELECT * FROM votes WHERE user_id = ? AND voting_id = ? ORDER BY id DESC"
+        query = "SELECT * FROM votes WHERE user_id = ? AND voting_id = ? ORDER BY id DESC LIMIT 1"
         t = await self.db.async_get_one(query, (user_id, voting_id))
         if t is not None:
             return self.Vote(*t)
@@ -105,7 +111,7 @@ class VotingMaker:
             return self.Vote(*t)
         
     async def get_votes(self, voting_id: int) -> VotesCount:
-        query = "SELECT type, count(*) FROM (SELECT type FROM votes WHERE voting_id = ? GROUP BY user_id HAVING max(created)) GROUP BY type"
+        query = "SELECT type, count(*) FROM (SELECT type FROM votes WHERE voting_id = ? GROUP BY user_id HAVING max(id)) GROUP BY type"
         t = await self.db.async_get(query, (voting_id,))
         for_ = 0
         against = 0
@@ -117,11 +123,22 @@ class VotingMaker:
                     for_ = v[1]
         return self.VotesCount(for_, against)
     
-    async def get_votes_list(self, voting_id: int, start: int) -> list[VoteWithIndex]:
-        query = "SELECT * FROM votes WHERE voting_id = ? ORDER BY created DESC LIMIT ?, 21"
+    async def get_votes_list(self, voting_id: int, start: int) -> list[Vote]:
+        query = "SELECT * FROM votes WHERE voting_id = ? ORDER BY id DESC LIMIT ?, 21"
         t = await self.db.async_get(query, (voting_id, start))
-        for i, vote in enumerate(t):
-            t[i] = self.VoteWithIndex(start + i + 1, self.Vote(*vote))
+        await self._map_list(t, self.Vote)
+        return t
+    
+    async def get_votings_list_by_user(self, user_id: int, start: int) -> list[Voting]:
+        query = "SELECT * FROM votings WHERE author_id = ? ORDER BY id DESC LIMIT ?, 21"
+        t = await self.db.async_get(query, (user_id, start))
+        await self._map_list(t, self.Voting)
+        return t
+    
+    async def get_votes_list_by_user(self, user_id: int, start: int) -> list[Vote]:
+        query = "SELECT * FROM votes WHERE user_id = ? GROUP BY voting_id HAVING max(id) ORDER BY id DESC LIMIT ?, 21"
+        t = await self.db.async_get(query, (user_id, start))
+        await self._map_list(t, self.Vote)
         return t
     
     async def start_petition(self, title: str, desc: str, author_id: int, anonym: bool) -> Petition:
@@ -141,10 +158,9 @@ class VotingMaker:
             return self.Petition(*t)
         
     async def get_petitions_list(self, start) -> list[Petition]:
-        query = "SELECT * FROM petitions ORDER BY created DESC LIMIT ?, 21"
+        query = "SELECT * FROM petitions ORDER BY id DESC LIMIT ?, 21"
         t = await self.db.async_get(query, (start,))
-        for i, petition in enumerate(t):
-            t[i] = self.Petition(*petition)
+        await self._map_list(t, self.Petition)
         return t
 
     async def create_sign(self, user_id: int, petition_id: int) -> Sign:
@@ -153,7 +169,7 @@ class VotingMaker:
         return await self.get_sign_by_id(id_)
 
     async def get_sign(self, user_id: int, petition_id: int) -> Sign | None:
-        query = "SELECT * FROM signs WHERE user_id = ? AND petition_id = ? ORDER BY id DESC"
+        query = "SELECT * FROM signs WHERE user_id = ? AND petition_id = ? ORDER BY id DESC LIMIT 1"
         t = await self.db.async_get_one(query, (user_id, petition_id))
         if t is not None:
             return self.Sign(*t)
@@ -169,9 +185,51 @@ class VotingMaker:
         t = await self.db.async_get_one(query, (petition_id,))
         return self.SignsCount(t[0])
     
-    async def get_signs_list(self, petition_id: int, start: int) -> list[SignWithIndex]:
-        query = "SELECT * FROM signs WHERE petition_id = ? ORDER BY created DESC LIMIT ?, 21"
+    async def get_signs_list(self, petition_id: int, start: int) -> list[Sign]:
+        query = "SELECT * FROM signs WHERE petition_id = ? ORDER BY id DESC LIMIT ?, 21"
         t = await self.db.async_get(query, (petition_id, start))
-        for i, sign in enumerate(t):
-            t[i] = self.SignWithIndex(start + i + 1, self.Sign(*sign))
+        await self._map_list(t, self.Sign)
         return t
+    
+    async def get_petitions_list_by_user(self, user_id: int, start: int) -> list[Petition]:
+        query = "SELECT * FROM petitions WHERE author_id = ? ORDER BY id DESC LIMIT ?, 21"
+        t = await self.db.async_get(query, (user_id, start))
+        await self._map_list(t, self.Petition)
+        return t
+    
+    async def get_signs_list_by_user(self, user_id: int, start: int) -> list[Sign]:
+        query = "SELECT * FROM signs WHERE user_id = ? GROUP BY petition_id HAVING max(id) ORDER BY id DESC LIMIT ?, 21"
+        t = await self.db.async_get(query, (user_id, start))
+        await self._map_list(t, self.Sign)
+        return t
+    
+    async def get_activities_by_user(self, user_id: int, start: int, filter: Literal["голосования", "петиции", "все"]) -> list[Voting | Petition]:
+        if filter == "голосования":
+            return await self.get_votings_list_by_user(user_id, start)
+        elif filter == "петиции":
+            return await self.get_petitions_list_by_user(user_id, start)
+        else:
+            query = "SELECT \"voting\", * FROM votings WHERE author_id = ? UNION ALL SELECT \"petition\", * FROM petitions WHERE author_id = ? ORDER BY created DESC LIMIT ?, 21"
+            t = await self.db.async_get(query, (user_id, user_id, start))
+            clss = {"voting": self.Voting, "petition": self.Petition}
+            for i, sth in enumerate(t):
+                t[i] = clss[sth[0]](*sth[1:])
+            return t
+    
+    async def get_actives_by_user(self, user_id: int, start: int, filter: Literal["голоса", "подписи", "все"], admin: bool) -> list[Vote | Sign]:
+        if filter == "голоса":
+            return await self.get_votes_list_by_user(user_id, start)
+        elif filter == "подписи":
+            return await self.get_signs_list_by_user(user_id, start)
+        else:
+            query1 = "SELECT \"vote\", votes.id, user_id, voting_id, type, votes.created as created FROM votes JOIN votings ON votings.id = votes.voting_id WHERE user_id = ? AND votings.anonym = 0 GROUP BY voting_id HAVING max(votes.id) UNION ALL SELECT \"sign\", signs.id, user_id, petition_id, NULL, signs.created FROM signs JOIN petitions ON petitions.id = signs.petition_id WHERE user_id = ? AND petitions.anonym = 0 GROUP BY petition_id HAVING max(signs.id) ORDER BY created DESC LIMIT ?, 21"
+            query2 = "SELECT \"vote\", id, user_id, voting_id, type, created FROM votes WHERE user_id = ? GROUP BY voting_id HAVING max(id) UNION ALL SELECT \"sign\", id, user_id, petition_id, NULL, created FROM signs WHERE user_id = ? GROUP BY petition_id HAVING max(id) ORDER BY created DESC LIMIT ?, 21"
+            query = query2 if admin else query1
+            t = await self.db.async_get(query, (user_id, user_id, start))
+            clss = {"vote": self.Vote, "sign": self.Sign}
+            for i, sth in enumerate(t):
+                if sth[0] == "sign":
+                    t[i] = clss[sth[0]](*(sth[1:4]+sth[5:]))
+                else:
+                    t[i] = clss[sth[0]](*sth[1:])
+            return t
