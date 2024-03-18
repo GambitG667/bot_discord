@@ -61,11 +61,11 @@ class ActivesListEmbed(disnake.Embed):
             else:
                 t = ""
                 id_ = a.petition_id
-            self.add_field(f"{str(a).capitalize()} №*{id_}*. **{bot.get_user(a.user_id).display_name}**{t}", f"<t:{int(a.created.timestamp())}>", inline=False)
+            self.add_field(f"{start + i + 1}. {str(a).capitalize()} №*{id_}* - **{bot.get_user(a.user_id).display_name}**{t}", f"<t:{int(a.created.timestamp())}>", inline=False)
         self.set_author(name=user.display_name, icon_url=user.display_avatar.url)
 
 class ActivitiesListEmbed(disnake.Embed):
-    def __init__(self, bot: commands.InteractionBot, activitiesList: list[VotingMaker.Voting | VotingMaker.Petition], user: disnake.Member | None = None) -> None:
+    def __init__(self, bot: commands.InteractionBot, activitiesList: list[VotingMaker.Voting | VotingMaker.Petition], start: int, user: disnake.Member | None = None) -> None:
         types_set = set(map(type, activitiesList))
         title = ["Список"]
         if len(types_set) == 1 and user is None:
@@ -81,7 +81,7 @@ class ActivitiesListEmbed(disnake.Embed):
                 t.append(f"Закрыто: <t:{int(a.closed.timestamp())}>.")
             
             t.append(anonym(a.anonym))
-            self.add_field(f"*{str(a).capitalize()} №{a.id}*. {bot.get_user(a.author_id).display_name}: **{a.title}**", " ".join(t), inline=False)
+            self.add_field(f"{start + i + 1}. *{str(a).capitalize()} №{a.id}* - {bot.get_user(a.author_id).display_name}: **{a.title}**", " ".join(t), inline=False)
         if user is not None:
             self.set_author(name=user.display_name, icon_url=user.display_avatar.url)
         self.set_footer(text=bot.user.display_name)

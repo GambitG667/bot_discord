@@ -157,6 +157,7 @@ class ActivitiesListView(AbsList):
         embed = ActivitiesListEmbed(
             bot,
             activities,
+            start,
             self.user
         )
         return embed
