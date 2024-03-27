@@ -43,7 +43,7 @@ class Commons(commands.Cog):
 
     @commands.slash_command(
             name="голосование",
-            dm_permition=False
+            dm_permission=False
     )
     async def voting(inter: disnake.CommandInter, *args) -> None:
         pass
