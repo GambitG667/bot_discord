@@ -32,7 +32,8 @@ class Bot(commands.InteractionBot):
 
     async def on_ready(self) -> None:
         logger.info(f"Бот {bot.user} готов!")
-        self.voting = VotingMaker(await Database.open(args.database))
+        self.database = await Database.open(args.database)
+        self.voting = VotingMaker(self.database)
 
     async def on_slash_command_error(self, inter: disnake.CommandInter, error: commands.CommandError) -> None:
         command = inter.application_command
