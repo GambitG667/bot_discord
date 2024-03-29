@@ -85,11 +85,33 @@ class Database:
         )"""
         await self._create_table_async(query, table_name)
 
+    async def _create_voting_life_table(self) -> None:
+        table_name = "voting_life"
+        query = f"""CREATE TABLE IF NOT EXISTS {table_name} (
+            "voting_id" INTEGER PRIMARY KEY,
+            "channel_id" INTEGER NOT NULL,
+            "death" DATETIME NOT NULL,
+            FOREIGN KEY (voting_id) REFERENCES votings (id)
+        )"""
+        await self._create_table_async(query, table_name)
+
+    async def _create_petition_life_table(self) -> None:
+        table_name = "petition_life"
+        query = f"""CREATE TABLE IF NOT EXISTS {table_name} (
+            "petition_id" INTEGER PRIMARY KEY,
+            "channel_id" INTEGER NOT NULL,
+            "death" DATETIME NOT NULL,
+            FOREIGN KEY (petition_id) REFERENCES petitions (id)
+        )"""
+        await self._create_table_async(query, table_name)
+
     async def _create_tables(self) -> None:
         await self._create_votings_table()
         await self._create_votes_table()
+        await self._create_voting_life_table()
         await self._create_petitions_table()
         await self._create_signs_table()
+        await self._create_petition_life_table()
         logger.debug("Все таблицы были проверены и/или созданы")
 
     def _connect(self) -> None:
