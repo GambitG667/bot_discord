@@ -72,6 +72,7 @@ class ActivityTasks(commands.Cog):
                     if isinstance(a, self.VotingLife):
                         await self.bot.voting.close_voting(a.voting_id)
                         await self.delete_voting_life(a.voting_id)
+                        logger.info(f"Голосование №{a.voting_id} было успешно завершено")
                         embed = ResultsEmbed(
                             await self.bot.fetch_user(activity.author_id),
                             activity,
@@ -80,6 +81,7 @@ class ActivityTasks(commands.Cog):
                     else:
                         await self.bot.voting.close_petition(a.petition_id)
                         await self.delete_petition_life(a.petition_id)
+                        logger.info(f"Петиция №{a.voting_id} была успешно завершена")
                         embed = ResultsEmbed(
                             await self.bot.fetch_user(activity.author_id),
                             activity,

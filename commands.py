@@ -1,7 +1,7 @@
 from __future__ import annotations
 import disnake
 from disnake.ext import commands
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from views import *
 from modals import *
@@ -23,6 +23,11 @@ _petition_anonym = commands.Param(name="анонимная", description="Есл
 
 _activity_filter = commands.Param(name="активности", description="Фильтр активностей", choices=["голосования", "петиции", "все"], default="все")
 _actives_filter = commands.Param(name="активы", description="Фильтр активов", choices=["голоса", "подписи", "все"], default="все")
+
+_seconds = commands.Param(name="секунды", description="Через сколько секунд активность закроется (могут быть опоздания)", ge=0, lt=60, default=0)
+_minute = commands.Param(name="минуты", description="Через сколько минут активность закроется", ge=0, lt=60, default=0)
+_hour = commands.Param(name="часы", description="Через сколько часов активность закроется", ge=0, lt=24, default=0)
+_day = commands.Param(name="дни", description="Через сколько дней активность закроется", ge=0, lt=365, default=0)
 
 async def check_voting(inter: disnake.CommandInter, id_: int) -> bool:
     bot: Bot = inter.bot
@@ -52,14 +57,15 @@ class Commons(commands.Cog):
             name="создать",
             description="Создать голосование"
     )
-    async def create(inter: disnake.CommandInter, anonym: str = _voting_anonym) -> None:
+    async def create(inter: disnake.CommandInter, anonym: str = _voting_anonym, days: int = _day, hours: int = _hour, minutes: int = _minute, seconds: int = _seconds) -> None:
         b: bool = None
         match anonym:
             case "да":
                 b = True
             case "нет":
                 b = False
-        await inter.response.send_modal(modal=CreateVotingModal(b))
+        td = timedelta(days=days, hours=hours, minutes=minutes, seconds=seconds)
+        await inter.response.send_modal(modal=CreateVotingModal(b, inter.channel.id, td))
 
     @voting.sub_command(
             name="отобразить",
@@ -163,14 +169,15 @@ class Commons(commands.Cog):
         name="создать",
         description="Создать петицию"
     )
-    async def create(inter: disnake.CommandInter, anonym: str = _petition_anonym) -> None:
+    async def create(inter: disnake.CommandInter, anonym: str = _petition_anonym, days: int = _day, hours: int = _hour, minutes: int = _minute, seconds: int = _seconds) -> None:
         b: bool = None
         match anonym:
             case "да":
                 b = True
             case "нет":
                 b = False
-        await inter.response.send_modal(CreatePetitionModal(b))
+        td = timedelta(days=days, hours=hours, minutes=minutes, seconds=seconds)
+        await inter.response.send_modal(CreatePetitionModal(b, inter.channel.id, td))
 
     @petition.sub_command(
         name="отобразить",
