@@ -11,6 +11,7 @@ setup_logger()
 from voting import VotingMaker
 from database import Database
 from commands import Commons
+from activity_tasks import ActivityTasks
 
 from views import *
 from embeds import *
@@ -34,6 +35,7 @@ class Bot(commands.InteractionBot):
         logger.info(f"Бот {bot.user} готов!")
         self.database = await Database.open(args.database)
         self.voting = VotingMaker(self.database)
+        self.add_cog(ActivityTasks(self))
 
     async def on_slash_command_error(self, inter: disnake.CommandInter, error: commands.CommandError) -> None:
         command = inter.application_command
