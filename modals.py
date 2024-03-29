@@ -18,16 +18,16 @@ class AbsTitleAndDescModal(disnake.ui.Modal):
         self.anonym = anonym
         comp = [
             disnake.ui.TextInput(
-                label = "Заголовок",
-                placeholder = f"Напишите тему {genitive_case}",
-                custom_id = "title",
+                label="Заголовок",
+                placeholder=f"Напишите тему {genitive_case}",
+                custom_id="title",
                 style=disnake.TextInputStyle.short,
                 max_length=20
             ),
             disnake.ui.TextInput(
-                label = "Описание",
-                placeholder = f"Напишите полное описание {genitive_case}",
-                custom_id = "description",
+                label="Описание",
+                placeholder=f"Напишите полное описание {genitive_case}",
+                custom_id="description",
                 style=disnake.TextInputStyle.long
             )
         ]
