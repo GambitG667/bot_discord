@@ -93,7 +93,7 @@ class Bot(commands.InteractionBot):
             if send_embed:
                 count = await bot.voting.get_votes(voting.id)
                 embed = ResultsEmbed(
-                    bot.get_user(voting.author_id),
+                    await bot.fetch_user(voting.author_id),
                     voting,
                     count
                 )
@@ -129,7 +129,7 @@ class Bot(commands.InteractionBot):
             signs_count = await bot.voting.get_signs(petition.id)
             if send_embed:
                 embed = ResultsEmbed(
-                    bot.get_user(petition.author_id),
+                    await bot.fetch_user(petition.author_id),
                     petition,
                     signs_count
                 )
