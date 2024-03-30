@@ -88,8 +88,11 @@ class Bot(commands.InteractionBot):
         if voting.closed is not None:
             await inter.send("Голосование уже было закрыто", ephemeral=True)
             return
+        
+        tasks: ActivityTasks = self.get_cog("ActivityTasks")
 
         if inter.permissions.administrator or inter.author.id == voting.author_id:
+            await tasks.delete_voting_life(voting.id)
             await bot.voting.close_voting(voting.id)
             logger.info(f"{inter.author.display_name} окончил голосование №{voting.id}")
             if send_embed:
@@ -101,7 +104,7 @@ class Bot(commands.InteractionBot):
                 )
                 await inter.send(embed=embed)
         else:
-            await inter.send("У вас нет прав чтобы закрыть петицию", ephemeral=True)
+            await inter.send("У вас нет прав чтобы закрыть голосование", ephemeral=True)
 
     async def sign(self, inter: disnake.Interaction, petition: VotingMaker.Petition):
         user = inter.author
@@ -124,8 +127,11 @@ class Bot(commands.InteractionBot):
         if petition.closed is not None:
             await inter.send("Петиция уже была закрыта", ephemeral=True)
             return
+        
+        tasks: ActivityTasks = self.get_cog("ActivityTasks")
 
         if inter.permissions.administrator or inter.author.id == petition.author_id:
+            await tasks.delete_petition_life(petition.id)
             petition = await bot.voting.close_petition(petition.id)
             logger.info(f"{inter.author.display_name} окончил петицию №{petition.id}")
             signs_count = await bot.voting.get_signs(petition.id)

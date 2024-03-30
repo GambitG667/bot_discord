@@ -39,8 +39,20 @@ class ActivityTasks(commands.Cog):
             t[i] = clss[a[0]](*a[1:])
         return tuple(t)
     
+    async def get_voting_life(self, voting_id: int) -> VotingLife | None:
+        query = "SELECT * FROM voting_life WHERE voting_id = ?"
+        t = await self.db.async_get_one(query, (voting_id,))
+        if t is not None:
+            return self.VotingLife(*t)
+    
+    async def get_petition_life(self, petition_id: int) -> PetitionLife | None:
+        query = "SELECT * FROM petition_life WHERE petition_id = ?"
+        t = await self.db.async_get_one(query, (petition_id,))
+        if t is not None:
+            return self.PetitionLife(*t)
+    
     async def _delete_activity_life(self, table: str, id_name: str, id_: int) -> int:
-        query = f"DELETE FROM {table} WHERE {id_name}=?"
+        query = f"DELETE FROM {table} WHERE {id_name} = ?"
         return await self.db.async_put(query, (id_,))
     
     async def delete_voting_life(self, voting_id: int) -> int:
