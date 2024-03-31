@@ -3,6 +3,7 @@ import disnake
 from disnake.ext import commands
 from datetime import datetime
 from voting import VotingMaker
+import traceback
 
 import logging
 logger = logging.getLogger(__name__)
@@ -85,3 +86,15 @@ class ActivitiesListEmbed(disnake.Embed):
         if user is not None:
             self.set_author(name=user.display_name, icon_url=user.display_avatar.url)
         self.set_footer(text=bot.user.display_name)
+
+class ErrorEmbed(disnake.Embed):
+    """Используется с вебхуками"""
+    def __init__(self, inter: disnake.CommandInter, bot: Bot, error: commands.CommandError) -> None:
+        if isinstance(error, commands.CommandInvokeError):
+            error = error.original
+        s = str(error)
+        if len(s) > 256:
+            s = s[:253] + "..."
+        super().__init__(title=f"{s}", description=f"```{''.join(traceback.format_exception(error))}```", color=disnake.Colour.red())
+        self.set_author(name=inter.author.display_name, icon_url=inter.author.display_avatar.url)
+        self.set_footer(text=f"[{inter.application_command.qualified_name}]")

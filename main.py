@@ -37,17 +37,31 @@ class Bot(commands.InteractionBot):
         self.voting = VotingMaker(self.database)
         self.add_cog(ActivityTasks(self))
 
+        self.error_webhook = None
+        if args.webhook is not None:
+            try:
+                self.error_webhook = await self.fetch_webhook(args.webhook)
+                logger.info(f"Вебхук {args.webhook} успешно захвачен")
+            except disnake.NotFound:
+                logger.warning(f"Не удалось найти вебхук с ID {args.webhook}. Проигнорируется")
+            except disnake.HTTPException:
+                logger.warning(f"Не удалось захватить вебхук {args.webhook}. Проигнорируется")
+        else:
+            logger.info("Вебхук не используется")
+
     async def on_slash_command_error(self, inter: disnake.CommandInter, error: commands.CommandError) -> None:
         command = inter.application_command
-        if command and command.has_error_handler():
-            return
-
-        cog = command.cog
-        if cog and cog.has_slash_error_handler():
-            return
+        
+        if self.error_webhook is not None:
+            embed = ErrorEmbed(inter, self, error)
+            await self.error_webhook.send(
+                username=self.user.display_name + " Errors",
+                avatar_url=self.user.display_avatar.url,
+                embed=embed
+            )
         
         logger.error(
-            f"При выполнении команды [{inter.application_command.qualified_name}] для {inter.author.display_name} проигнорирована ошибка:",
+            f"При выполнении команды [{command.qualified_name}] для {inter.author.display_name} проигнорирована ошибка:",
             exc_info=(type(error), error, error.__traceback__)
         )
 
