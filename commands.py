@@ -44,11 +44,11 @@ async def check_petition(inter: disnake.CommandInter, id_: int) -> bool:
 class Commons(commands.Cog):
     def __init__(self) -> None:
         for command in self.get_slash_commands():
+            command.body.dm_permission = False
             logger.debug(f"В коге {self.qualified_name} зарегестрирована комманда {command.name}")
 
     @commands.slash_command(
-            name="голосование",
-            dm_permission=False
+            name="голосование"
     )
     async def voting(inter: disnake.CommandInter, *args) -> None:
         pass
@@ -159,8 +159,7 @@ class Commons(commands.Cog):
         await bot.vote(inter, voting, bool_type, type_)
 
     @commands.slash_command(
-            name="петиция",
-            dm_permission=False
+            name="петиция"
     )
     async def petition(inter: disnake.CommandInter, *args) -> None:
         pass
@@ -264,8 +263,7 @@ class Commons(commands.Cog):
         await bot.sign(inter, petition)
 
     @commands.slash_command(
-        name="пользователи",
-        dm_permission=False
+        name="пользователи"
     )
     async def users(inter: disnake.CommandInter, *args) -> None:
         pass
