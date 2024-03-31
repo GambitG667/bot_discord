@@ -44,8 +44,8 @@ class Bot(commands.InteractionBot):
                 logger.info(f"Вебхук {args.webhook} успешно захвачен")
             except disnake.NotFound:
                 logger.warning(f"Не удалось найти вебхук с ID {args.webhook}. Проигнорируется")
-            except disnake.HTTPException:
-                logger.warning(f"Не удалось захватить вебхук {args.webhook}. Проигнорируется")
+            except disnake.HTTPException as e:
+                logger.warning(f"Не удалось захватить вебхук {args.webhook} по причине {e.text}. Проигнорируется")
         else:
             logger.info("Вебхук не используется")
 
