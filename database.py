@@ -125,32 +125,39 @@ class Database:
         await obj.connect_database()
         return obj
 
-    def _get(self, query: str, params: list[any]) -> sqlite3.Cursor:
-        cur = self.connect.execute(query, params)
-        return cur
+    def _get(self, query: str, params: tuple[any] | None = None) -> sqlite3.Cursor:
+        with self.connect:
+            if params is None:
+                cur = self.connect.execute(query)
+            else:
+                cur = self.connect.execute(query, params)
+            return cur
 
-    def get(self, query: str, params: list[any]) -> list[any]:
+    def get(self, query: str, params: tuple[any] | None = None) -> list[any]:
         cur = self._get(query, params)
         return cur.fetchall()
 
-    def get_one(self, query: str, params: list[any]) -> any:
+    def get_one(self, query: str, params: tuple[any] | None = None) -> any:
         cur = self._get(query, params)
         return cur.fetchone()
 
-    def put(self, query: str, params: list[any]) -> int:
+    def put(self, query: str, params: tuple[any] | None = None) -> int:
         with self.connect:
-            cur = self.connect.execute(query, params)
+            if params is None:
+                cur = self.connect.execute(query)
+            else:
+                cur = self.connect.execute(query, params)
             return cur.lastrowid
 
-    async def execute_async(self, method: Callable, *args: list[any]) -> any:
+    async def execute_async(self, method: Callable, *args) -> any:
         loop = asyncio.get_event_loop()
         return await loop.run_in_executor(None, lambda: method(*args))
 
-    async def async_get(self, query: str, params: list[any]) -> list[any]:
+    async def async_get(self, query: str, params: tuple[any] | None = None) -> list[any]:
         return await self.execute_async(self.get, query, params)
 
-    async def async_get_one(self, query: str, params: list[any]) -> any:
+    async def async_get_one(self, query: str, params: tuple[any] | None = None) -> any:
         return await self.execute_async(self.get_one, query, params)
 
-    async def async_put(self, query: str, params: list[any]) -> int:
+    async def async_put(self, query: str, params: tuple[any] | None = None) -> int:
         return await self.execute_async(self.put, query, params)
