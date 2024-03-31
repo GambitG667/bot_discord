@@ -65,7 +65,7 @@ class ActivesListEmbed(disnake.Embed):
         self.set_author(name=user.display_name, icon_url=user.display_avatar.url)
 
 class ActivitiesListEmbed(disnake.Embed):
-    def __init__(self, bot: commands.InteractionBot, activitiesList: list[VotingMaker.Voting | VotingMaker.Petition], start: int, user: disnake.Member | None = None) -> None:
+    def __init__(self, bot: Bot, activitiesList: list[VotingMaker.Voting | VotingMaker.Petition], start: int, user: disnake.Member | None = None) -> None:
         types_set = set(map(type, activitiesList))
         title = ["Список"]
         if len(types_set) == 1 and user is None:
