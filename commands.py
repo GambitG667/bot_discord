@@ -78,7 +78,7 @@ class Commons(commands.Cog):
             await inter.send(f"Голосование №{id_} не найдено", ephemeral=True)
             return
         embed = ActivityEmbed(
-                inter.bot.get_user(voting.author_id),
+                await inter.bot.fetch_user(voting.author_id),
                 voting
         )
         await inter.send(embed=embed, view=VotingView(id_), ephemeral=True)
@@ -96,7 +96,7 @@ class Commons(commands.Cog):
         count = await bot.voting.get_votes(id_)
         time = voting.closed if voting.closed else datetime.today()
         embed = ResultsEmbed(
-            bot.get_user(voting.author_id),
+            await bot.fetch_user(voting.author_id),
             voting,
             count
         )
@@ -190,7 +190,7 @@ class Commons(commands.Cog):
             await inter.send(f"Петиция №{id_} не найдена", ephemeral=True)
             return
         embed = ActivityEmbed(
-                inter.bot.get_user(petition.author_id),
+                await inter.bot.fetch_user(petition.author_id),
                 petition
         )
         await inter.send(embed=embed, view=PetitionView(id_), ephemeral=True)
@@ -208,7 +208,7 @@ class Commons(commands.Cog):
             return
         count = await bot.voting.get_signs(id_)
         embed = ResultsEmbed(
-            bot.get_user(petition.author_id),
+            await bot.fetch_user(petition.author_id),
             petition,
             count
         )
