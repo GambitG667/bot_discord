@@ -11,6 +11,7 @@ setup_logger()
 from voting import VotingMaker
 from database import Database
 from commands import Commons
+from admins import Admins
 from activity_tasks import ActivityTasks
 
 from views import *
@@ -30,6 +31,8 @@ class Bot(commands.InteractionBot):
 
         logger.debug(f"Регистрация кога Commons")
         self.add_cog(Commons())
+        logger.debug(f"Регистрация кога Admins")
+        self.add_cog(Admins())
 
     async def on_ready(self) -> None:
         logger.info(f"Бот {bot.user} готов!")
