@@ -80,6 +80,10 @@ class VotingMaker:
         query = "UPDATE votings SET closed = ? WHERE id = ?"
         id_ = await self.db.async_put(query, (datetime.today(), id_))
         return await self.get_voting(id_)
+    
+    async def delete_voting(self, id_: int) -> None:
+        query = "DELETE FROM votings WHERE id = ?"
+        await self.db.async_put(query, (id_,))
 
     async def get_voting(self, id_: int) -> Voting | None:
         query = "SELECT * FROM votings WHERE id = ?"
@@ -150,6 +154,10 @@ class VotingMaker:
         query = "UPDATE petitions SET closed = ? WHERE id = ?"
         id_ = await self.db.async_put(query, (datetime.today(), id_))
         return await self.get_petition(id_)
+    
+    async def delete_petition(self, id_: int) -> None:
+        query = "DELETE FROM petitions WHERE id = ?"
+        await self.db.async_put(query, (id_,))
 
     async def get_petition(self, id_: int) -> Petition | None:
         query = "SELECT * FROM petitions WHERE id = ?"
