@@ -89,6 +89,10 @@ class Bot(commands.InteractionBot):
         if voting.closed is not None:
             await inter.send(f"Голосование закрыто", ephemeral=True)
             return
+        
+        if inter.author.id == voting.author_id and not inter.permissions.administrator:
+            await inter.send(f"Вы не можете проголосовать так как являетесь создателем голосования", ephemeral=True)
+            return
 
         if t == type_:
             await inter.send(f"Вы уже проголосовали за {label}", ephemeral=True)
@@ -126,6 +130,10 @@ class Bot(commands.InteractionBot):
 
         if petition.closed is not None:
             await inter.send(f"Петиция закрыта", ephemeral=True)
+            return
+        
+        if inter.author.id == petition.author_id and not inter.permissions.administrator:
+            await inter.send(f"Вы не можете подписать так как являетесь создателем петиции", ephemeral=True)
             return
 
         if sign is not None:
