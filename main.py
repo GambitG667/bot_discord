@@ -17,10 +17,16 @@ from activity_tasks import ActivityTasks
 from views import *
 from embeds import *
 
-token_name: str = args.token
-token = os.getenv(token_name)
+token = None
+if args.token is None:
+    token = os.getenv("TOKEN")
+else:
+    token = args.token
+
 if token is None:
-    raise ValueError(f"Токен {token_name} не обнаружен")
+    raise ValueError(f"Токен не обнаружен")
+else:
+    logger.info(f"Токен [{token[:5]}...] используется")
 
 logger = logging.getLogger(__name__)
 
