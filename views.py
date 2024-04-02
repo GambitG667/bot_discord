@@ -81,7 +81,7 @@ class AbsList(disnake.ui.View):
         await self.old_inter.edit_original_response(content=None, embed=embed, view=self)
 
 class ActivesListView(AbsList):
-    def __init__(self, inter: disnake.MessageInteraction, activity: VotingMaker.Voting | VotingMaker.Petition | str, index: int = 1, user: disnake.Member | None = None) -> None:
+    def __init__(self, inter: disnake.MessageInteraction, activity: VotingMaker.Voting | VotingMaker.Petition | str, index: int = 1, user: disnake.Member | None = None, timeout: float | None = None) -> None:
         self.no_actives_resp = "Данный пользователь не имеет активов"
         self.anonym_resp = None
         if isinstance(activity, VotingMaker.Voting):
@@ -92,7 +92,7 @@ class ActivesListView(AbsList):
             self.anonym_resp = "Данная петиция является аннонимной"
         self.activity = activity
         self.user = user
-        super().__init__(inter, index, timeout=None)
+        super().__init__(inter, index, timeout=timeout)
 
     async def change(self, offset: int) -> ActivesListEmbed | None:
         await super().change(offset)
@@ -127,8 +127,8 @@ class ActivesListView(AbsList):
         return embed
     
 class ActivitiesListView(AbsList):
-    def __init__(self, inter: disnake.MessageInteraction, activities_type: type[VotingMaker.Voting | VotingMaker.Petition] | str, index: int = 1, user: disnake.Member | None = None) -> None:
-        super().__init__(inter, index, timeout=None)
+    def __init__(self, inter: disnake.MessageInteraction, activities_type: type[VotingMaker.Voting | VotingMaker.Petition] | str, index: int = 1, user: disnake.Member | None = None, timeout: float | None = None) -> None:
+        super().__init__(inter, index, timeout=timeout)
         self.no_activities_resp = "Пользователь пока что ничего не создавал"
         if activities_type == VotingMaker.Voting:
             self.no_activities_resp = "Пока что нет голосований"
