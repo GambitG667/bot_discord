@@ -70,20 +70,20 @@ class Bot(commands.InteractionBot):
             )
         
         logger.error(
-            f"При выполнении команды [{command.qualified_name}] для {inter.author.display_name} проигнорирована ошибка:",
+            f"При выполнении команды [{command.qualified_name}] для {inter.author.name} проигнорирована ошибка:",
             exc_info=(type(error), error, error.__traceback__)
         )
 
     async def on_slash_command(self, inter: disnake.CommandInter) -> None:
         params = list(f"{k}: {v}" for k, v in inter.filled_options.items())
-        t = [f"{inter.author.display_name} запросил комманду [{inter.application_command.qualified_name}]"]
+        t = [f"{inter.author.name} запросил комманду [{inter.application_command.qualified_name}]"]
         if len(params) != 0:
             t.append(f"с параметрами {', '.join(params)}")
         logger.info(" ".join(t))
 
     async def on_slash_command_completion(self, inter: disnake.CommandInter) -> None:
         params = list(f"{k}: {v}" for k, v in inter.filled_options.items())
-        t = [f"Для {inter.author.display_name} команда [{inter.application_command.qualified_name}] была выполнена успешно"]
+        t = [f"Для {inter.author.name} команда [{inter.application_command.qualified_name}] была выполнена успешно"]
         if len(params) != 0:
             t.append(f"с параметрами {', '.join(params)}")
         logger.info(" ".join(t))
@@ -106,7 +106,7 @@ class Bot(commands.InteractionBot):
         if t == type_:
             await inter.send(f"Вы уже проголосовали за {label}", ephemeral=True)
             return
-        logger.info(f"{user.display_name} прологосовал за \"{label}\" в голосовании №{voting.id}: {voting.title}")
+        logger.info(f"{user.name} прологосовал за \"{label}\" в голосовании №{voting.id}: {voting.title}")
         
         await inter.send(f"Вы проголосовали за {label}", ephemeral=True)
         await bot.voting.create_vote(inter.author.id, voting.id, type_)
@@ -121,7 +121,7 @@ class Bot(commands.InteractionBot):
         if inter.permissions.administrator or inter.author.id == voting.author_id:
             await tasks.delete_voting_life(voting.id)
             await bot.voting.close_voting(voting.id)
-            logger.info(f"{inter.author.display_name} окончил голосование №{voting.id}")
+            logger.info(f"{inter.author.name} окончил голосование №{voting.id}")
             if send_embed:
                 count = await bot.voting.get_votes(voting.id)
                 embed = ResultsEmbed(
@@ -148,7 +148,7 @@ class Bot(commands.InteractionBot):
         if sign is not None:
             await inter.send(f"Вы уже подписывали петицию", ephemeral=True)
             return
-        logger.info(f"{user.display_name} подписал петицию №{petition.id}: {petition.title}")
+        logger.info(f"{user.name} подписал петицию №{petition.id}: {petition.title}")
         
         await inter.send(f"Вы подписали петицию", ephemeral=True)
         await bot.voting.create_sign(inter.author.id, petition.id)
@@ -164,7 +164,7 @@ class Bot(commands.InteractionBot):
         if inter.permissions.administrator or inter.author.id == petition.author_id:
             await tasks.delete_petition_life(petition.id)
             petition = await bot.voting.close_petition(petition.id)
-            logger.info(f"{inter.author.display_name} окончил петицию №{petition.id}")
+            logger.info(f"{inter.author.name} окончил петицию №{petition.id}")
             signs_count = await bot.voting.get_signs(petition.id)
             if send_embed:
                 embed = ResultsEmbed(
