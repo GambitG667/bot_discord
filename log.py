@@ -19,9 +19,9 @@ def setup_logger() -> None:
 
     logger.setLevel(level)
 
-    logging.getLogger("asyncio").setLevel(logging.WARNING)
+    logging.getLogger("asyncio").setLevel(logging.INFO)
     logging.getLogger("aiosqlite").setLevel(logging.INFO)
-    logging.getLogger("disnake").setLevel(logging.WARNING)
+    logging.getLogger("disnake").setLevel(logging.INFO)
     
     formatter = logging.Formatter(
         "[{asctime}] [{levelname:<8}] - {name}: {message}",
