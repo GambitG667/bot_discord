@@ -41,7 +41,7 @@ class Bot(commands.InteractionBot):
         self.add_cog(Admins())
 
     async def on_ready(self) -> None:
-        logger.info(f"Бот {bot.user} готов!")
+        logger.info(f"Бот {self.user} готов!")
         self.database = await Database.open(args.database)
         self.voting = VotingMaker(self.database)
         self.add_cog(ActivityTasks(self))
@@ -55,6 +55,12 @@ class Bot(commands.InteractionBot):
                 logger.warning(f"Не удалось найти вебхук с ID {args.webhook}. Проигнорируется")
             except disnake.HTTPException as e:
                 logger.warning(f"Не удалось захватить вебхук {args.webhook} по причине {e.text}. Проигнорируется")
+            else:
+                await self.error_webhook.send(
+                    content=f"Бот {self.user.mention} запущен",
+                    username=self.user.display_name + " Errors",
+                    avatar_url=self.user.display_avatar.url
+                )
         else:
             logger.info("Вебхук не используется")
 
