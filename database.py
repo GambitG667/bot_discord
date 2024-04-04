@@ -11,30 +11,28 @@ sqlite3.register_converter("DATETIME", lambda v: datetime.fromisoformat(v.decode
 
 logger = logging.getLogger(__name__)
 
-from typing import Callable, Self
+from typing import Callable
 
-class Database:
+class AsyncSQLiteDB:
     def __init__(self, path: str) -> None:
         self.path = path
-        logger.debug(f"Иницилизация объекта базы данных {self.path}")
-    
-    async def connect_database(self) -> None:
-        await self.execute_async(self._connect)
-        await self._create_tables()
+        self.loop = asyncio.get_event_loop()
+
+        logger.info(f"Иницилизация базы данных ({self.path})")
+        if not os.path.isfile(self.path):
+            logger.warning(f"Базы данных {self.path} не существует. В этом случае она будет создана")
+        self.connect = sqlite3.connect(self.path, detect_types=sqlite3.PARSE_DECLTYPES, check_same_thread=False)
 
     async def _is_table_exist(self, table_name: str) -> bool:
         query = "SELECT EXISTS(SELECT name FROM sqlite_master WHERE type = 'table' AND name = ?)"
-        ret = (await self.async_get_one(query, (table_name,)))[0]
+        ret = (await self.async_fetchone(query, (table_name,)))[0]
         return bool(ret)
-    
-    def _create_table(self, query: str) -> None:
-        self.connect.execute(query)
 
     async def _create_table_async(self, query: str, table_name: str) -> None:
         logger.debug(f"Проверка таблицы {table_name} на наличие в базе данных")
         if not (await self._is_table_exist(table_name)):
             logger.warning(f"Таблицы \"{table_name}\" нет в базе. Она будет создана")
-        await self.execute_async(self._create_table, query)
+        await self.execute_async(self.async_operate, query)
 
     async def _create_votings_table(self) -> None:
         table_name = "votings"
@@ -114,50 +112,48 @@ class Database:
         await self._create_petition_life_table()
         logger.debug("Все таблицы были проверены и/или созданы")
 
-    def _connect(self) -> None:
-        if not os.path.isfile(self.path):
-            logger.warning(f"Базы данных {self.path} не существует. В этом случае она будет создана")
-        self.connect = sqlite3.connect(self.path, detect_types=sqlite3.PARSE_DECLTYPES, check_same_thread=False)
-
-    @classmethod
-    async def open(cls, path: str) -> Self:
-        obj = cls(path)
-        await obj.connect_database()
-        return obj
-
     def _get(self, query: str, params: tuple[any] | None = None) -> sqlite3.Cursor:
-        with self.connect:
-            if params is None:
-                cur = self.connect.execute(query)
-            else:
-                cur = self.connect.execute(query, params)
-            return cur
+        if params is None:
+            cur = self.connect.execute(query)
+        else:
+            cur = self.connect.execute(query, params)
+        return cur
 
-    def get(self, query: str, params: tuple[any] | None = None) -> list[any]:
+    def fetchall(self, query: str, params: tuple[any] | None = None) -> list[any]:
         cur = self._get(query, params)
         return cur.fetchall()
 
-    def get_one(self, query: str, params: tuple[any] | None = None) -> any:
+    def fetchone(self, query: str, params: tuple[any] | None = None) -> any:
         cur = self._get(query, params)
         return cur.fetchone()
 
-    def put(self, query: str, params: tuple[any] | None = None) -> int:
-        with self.connect:
-            if params is None:
-                cur = self.connect.execute(query)
-            else:
-                cur = self.connect.execute(query, params)
-            return cur.lastrowid
+    def operate(self, query: str, params: tuple[any] | None = None) -> int | None:
+        if params is None:
+            cur = self.connect.execute(query)
+        else:
+            cur = self.connect.execute(query, params)
+            
+        self.connect.commit()
+        return cur.lastrowid
 
-    async def execute_async(self, method: Callable, *args) -> any:
-        loop = asyncio.get_event_loop()
-        return await loop.run_in_executor(None, lambda: method(*args))
+    async def execute_async(self, method: Callable, query: str, params: tuple[any] | None = None) -> any:
+        return await self.loop.run_in_executor(None, lambda: method(query, params))
 
-    async def async_get(self, query: str, params: tuple[any] | None = None) -> list[any]:
-        return await self.execute_async(self.get, query, params)
+    async def async_fetchall(self, query: str, params: tuple[any] | None = None) -> list[any]:
+        return await self.execute_async(self.fetchall, query, params)
 
-    async def async_get_one(self, query: str, params: tuple[any] | None = None) -> any:
-        return await self.execute_async(self.get_one, query, params)
+    async def async_fetchone(self, query: str, params: tuple[any] | None = None) -> any:
+        return await self.execute_async(self.fetchone, query, params)
 
-    async def async_put(self, query: str, params: tuple[any] | None = None) -> int:
-        return await self.execute_async(self.put, query, params)
+    async def async_operate(self, query: str, params: tuple[any] | None = None) -> int:
+        return await self.execute_async(self.operate, query, params)
+    
+    def _sync_close(self) -> None:
+        self.connect.close()
+        logger.info("База данных закрыта")
+
+    async def close(self) -> None:
+        await self.loop.run_in_executor(None, self._sync_close)
+
+    def __del__(self) -> None:
+        self.loop.run_until_complete(self.close())

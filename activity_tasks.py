@@ -33,7 +33,7 @@ class ActivityTasks(commands.Cog):
 
     async def get_activity_lifes(self) -> tuple[VotingLife | PetitionLife, ...]:
         query = "SELECT \"voting\", * FROM voting_life UNION ALL SELECT \"petition\", * FROM petition_life"
-        t = await self.db.async_get(query)
+        t = await self.db.async_fetchall(query)
         clss = {"voting": self.VotingLife, "petition": self.PetitionLife}
         for i, a in enumerate(t):
             t[i] = clss[a[0]](*a[1:])
@@ -41,7 +41,7 @@ class ActivityTasks(commands.Cog):
     
     async def get_activity_lifes_less_today(self) -> tuple[VotingLife | PetitionLife, ...]:
         query = "SELECT \"voting\", * FROM voting_life WHERE death <= datetime(\"now\", \"localtime\") UNION ALL SELECT \"petition\", * FROM petition_life WHERE death <= datetime(\"now\", \"localtime\")"
-        t = await self.db.async_get(query)
+        t = await self.db.async_fetchall(query)
         clss = {"voting": self.VotingLife, "petition": self.PetitionLife}
         for i, a in enumerate(t):
             t[i] = clss[a[0]](*a[1:])
@@ -49,31 +49,31 @@ class ActivityTasks(commands.Cog):
     
     async def get_voting_life(self, voting_id: int) -> VotingLife | None:
         query = "SELECT * FROM voting_life WHERE voting_id = ?"
-        t = await self.db.async_get_one(query, (voting_id,))
+        t = await self.db.async_fetchone(query, (voting_id,))
         if t is not None:
             return self.VotingLife(*t)
     
     async def get_petition_life(self, petition_id: int) -> PetitionLife | None:
         query = "SELECT * FROM petition_life WHERE petition_id = ?"
-        t = await self.db.async_get_one(query, (petition_id,))
+        t = await self.db.async_fetchone(query, (petition_id,))
         if t is not None:
             return self.PetitionLife(*t)
         
     async def get_first_voting_life(self) -> VotingLife | None:
         query = "SELECT * FROM voting_life ORDER BY death ASC LIMIT 1"
-        t = await self.db.async_get_one(query)
+        t = await self.db.async_fetchone(query)
         if t is not None:
             return self.VotingLife(*t)
         
     async def get_first_petition_life(self) -> PetitionLife | None:
         query = "SELECT * FROM voting_life ORDER BY death ASC LIMIT 1"
-        t = await self.db.async_get_one(query)
+        t = await self.db.async_fetchone(query)
         if t is not None:
             return self.PetitionLife(*t)
     
     async def get_first_activity_life(self) -> VotingLife | PetitionLife | None:
         query = "SELECT \"voting_life\", * FROM voting_life UNION ALL SELECT \"petition_life\", * FROM petition_life ORDER BY death ASC LIMIT 1"
-        t = await self.db.async_get_one(query)
+        t = await self.db.async_fetchone(query)
         if t is not None:
             if t[0] == "voting_life":
                 return self.VotingLife(*t[1:])
@@ -82,7 +82,7 @@ class ActivityTasks(commands.Cog):
 
     async def _delete_activity_life(self, table: str, id_name: str, id_: int) -> int:
         query = f"DELETE FROM {table} WHERE {id_name} = ?"
-        return await self.db.async_put(query, (id_,))
+        return await self.db.async_operate(query, (id_,))
     
     async def delete_voting_life(self, voting_id: int) -> int:
         return await self._delete_activity_life("voting_life", "voting_id", voting_id)
@@ -93,12 +93,12 @@ class ActivityTasks(commands.Cog):
     async def create_voting_life(self, voting_id: int, channel_id, td: timedelta) -> int:
         query = "INSERT INTO voting_life (voting_id,channel_id,death) VALUES (?, ?, ?)"
         dt = datetime.today() + td
-        return await self.db.async_put(query, (voting_id, channel_id, dt))
+        return await self.db.async_operate(query, (voting_id, channel_id, dt))
     
     async def create_petition_life(self, petition_id: int, channel_id, td: timedelta) -> int:
         query = "INSERT INTO petition_life (petition_id,channel_id,death) VALUES (?, ?, ?)"
         dt = datetime.today() + td
-        return await self.db.async_put(query, (petition_id, channel_id, dt))
+        return await self.db.async_operate(query, (petition_id, channel_id, dt))
 
     @tasks.loop(minutes=1)
     async def check_activity_life(self) -> None:

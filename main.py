@@ -9,7 +9,7 @@ load_dotenv()
 setup_logger()
 
 from voting import VotingMaker
-from database import Database
+from database import AsyncSQLiteDB
 from commands import Commons
 from admins import Admins
 from activity_tasks import ActivityTasks
@@ -42,7 +42,7 @@ class Bot(commands.InteractionBot):
 
     async def on_ready(self) -> None:
         logger.info(f"Бот {self.user} готов!")
-        self.database = await Database.open(args.database)
+        self.database = AsyncSQLiteDB(args.database)
         self.voting = VotingMaker(self.database)
         self.add_cog(ActivityTasks(self))
 
