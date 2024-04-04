@@ -34,12 +34,14 @@ async def check_voting(inter: disnake.CommandInter, id_: int) -> bool:
     voting = await bot.voting.get_voting(id_)
     if voting is not None:
         return True
+    return False
     
 async def check_petition(inter: disnake.CommandInter, id_: int) -> bool:
     bot: Bot = inter.bot
     petition = await bot.voting.get_petition(id_)
     if petition is not None:
         return True
+    return False
 
 class Commons(commands.Cog, slash_command_attrs=dict(dm_permission=False)):
     def __init__(self) -> None:
