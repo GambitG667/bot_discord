@@ -121,7 +121,7 @@ class ActivityTasks(commands.Cog):
                     embed = ResultsEmbed(
                         await self.bot.fetch_user(activity.author_id),
                         activity,
-                        await self.bot.voting.get_sign(a.petition_id)
+                            await self.bot.voting.get_signs(a.petition_id)
                     )
                 channel = await self.bot.fetch_channel(a.channel_id)
                 await channel.send(embed=embed)
