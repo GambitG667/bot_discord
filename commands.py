@@ -41,10 +41,9 @@ async def check_petition(inter: disnake.CommandInter, id_: int) -> bool:
     if petition is not None:
         return True
 
-class Commons(commands.Cog):
+class Commons(commands.Cog, slash_command_attrs=dict(dm_permission=False)):
     def __init__(self) -> None:
         for command in self.get_slash_commands():
-            command.body.dm_permission = False
             logger.debug(f"В коге {self.qualified_name} зарегестрирована комманда {command.name}")
 
     @commands.slash_command(

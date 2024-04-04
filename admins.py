@@ -11,11 +11,9 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from main import Bot
 
-class Admins(commands.Cog):
+class Admins(commands.Cog, slash_command_attrs=dict(dm_permission=False, default_member_permissions=disnake.Permissions(administrator=True))):
     def __init__(self) -> None:
         for command in self.get_slash_commands():
-            command.body.dm_permission = False
-            command.body._default_member_permissions = disnake.Permissions(administrator=True).value    # очень печально об этом говорить
             logger.debug(f"В коге {self.qualified_name} зарегестрирована комманда {command.name}")
         
     @commands.slash_command(
