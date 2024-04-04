@@ -39,6 +39,14 @@ class ActivityTasks(commands.Cog):
             t[i] = clss[a[0]](*a[1:])
         return tuple(t)
     
+    async def get_activity_lifes_less_today(self) -> tuple[VotingLife | PetitionLife, ...]:
+        query = "SELECT \"voting\", * FROM voting_life WHERE death <= datetime(\"now\", \"localtime\") UNION ALL SELECT \"petition\", * FROM petition_life WHERE death <= datetime(\"now\", \"localtime\")"
+        t = await self.db.async_get(query)
+        clss = {"voting": self.VotingLife, "petition": self.PetitionLife}
+        for i, a in enumerate(t):
+            t[i] = clss[a[0]](*a[1:])
+        return tuple(t)
+    
     async def get_voting_life(self, voting_id: int) -> VotingLife | None:
         query = "SELECT * FROM voting_life WHERE voting_id = ?"
         t = await self.db.async_get_one(query, (voting_id,))
@@ -92,44 +100,41 @@ class ActivityTasks(commands.Cog):
         dt = datetime.today() + td
         return await self.db.async_put(query, (petition_id, channel_id, dt))
 
-    @tasks.loop(seconds=10)
+    @tasks.loop(minutes=1)
     async def check_activity_life(self) -> None:
-        a = await self.get_first_activity_life()
-        if a is None:
-            return
-
-        if isinstance(a, self.VotingLife):
-            activity = await self.bot.voting.get_voting(a.voting_id)
-        else:
-            activity = await self.bot.voting.get_petition(a.petition_id)
-
-        if activity is not None:
-            if a.death <= datetime.now():
-                if isinstance(a, self.VotingLife):
-                    await self.bot.voting.close_voting(a.voting_id)
-                    await self.delete_voting_life(a.voting_id)
-                    logger.info(f"Голосование №{a.voting_id} было успешно завершено")
-                    embed = ResultsEmbed(
-                        await self.bot.fetch_user(activity.author_id),
-                        activity,
-                        await self.bot.voting.get_votes(a.voting_id)
-                    )
-                else:
-                    await self.bot.voting.close_petition(a.petition_id)
-                    await self.delete_petition_life(a.petition_id)
-                    logger.info(f"Петиция №{a.petition_id} была успешно завершена")
-                    embed = ResultsEmbed(
-                        await self.bot.fetch_user(activity.author_id),
-                        activity,
-                            await self.bot.voting.get_signs(a.petition_id)
-                    )
-                channel = await self.bot.fetch_channel(a.channel_id)
-                await channel.send(embed=embed)
-        else:
+        for a in await self.get_activity_lifes_less_today():
             if isinstance(a, self.VotingLife):
-                id_ = a.voting_id
-                await self.delete_voting_life(id_)
+                activity = await self.bot.voting.get_voting(a.voting_id)
             else:
-                id_ = a.petition_id
-                await self.delete_petition_life(id_)
-            logger.warning(f"Активности №{id_} не существует чтобы проверять его жизненный цикл. Его запись будет удалена")
+                activity = await self.bot.voting.get_petition(a.petition_id)
+
+            if activity is not None:
+                if a.death <= datetime.now():
+                    if isinstance(a, self.VotingLife):
+                        await self.bot.voting.close_voting(a.voting_id)
+                        await self.delete_voting_life(a.voting_id)
+                        logger.info(f"Голосование №{a.voting_id} было успешно завершено")
+                        embed = ResultsEmbed(
+                            await self.bot.fetch_user(activity.author_id),
+                            activity,
+                            await self.bot.voting.get_votes(a.voting_id)
+                        )
+                    else:
+                        await self.bot.voting.close_petition(a.petition_id)
+                        await self.delete_petition_life(a.petition_id)
+                        logger.info(f"Петиция №{a.petition_id} была успешно завершена")
+                        embed = ResultsEmbed(
+                            await self.bot.fetch_user(activity.author_id),
+                            activity,
+                            await self.bot.voting.get_signs(a.petition_id)
+                        )
+                    channel = await self.bot.fetch_channel(a.channel_id)
+                    await channel.send(embed=embed)
+            else:
+                if isinstance(a, self.VotingLife):
+                    id_ = a.voting_id
+                    await self.delete_voting_life(id_)
+                else:
+                    id_ = a.petition_id
+                    await self.delete_petition_life(id_)
+                logger.warning(f"Активности №{id_} не существует чтобы проверять его жизненный цикл. Его запись будет удалена")
