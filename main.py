@@ -42,7 +42,7 @@ class Bot(commands.InteractionBot):
 
     async def on_ready(self) -> None:
         logger.info(f"Бот {self.user} готов!")
-        self.database = AsyncSQLiteDB(args.database)
+        self.database = await AsyncSQLiteDB.open(args.database)
         self.voting = VotingMaker(self.database)
         self.add_cog(ActivityTasks(self))
 
