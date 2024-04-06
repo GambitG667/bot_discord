@@ -3,9 +3,6 @@ from disnake.ext import commands
 import logging
 from argparser import args
 from log import setup_logger
-import os
-from dotenv import load_dotenv
-load_dotenv()
 setup_logger()
 
 from voting import VotingMaker
@@ -16,17 +13,6 @@ from activity_tasks import ActivityTasks
 
 from views import *
 from embeds import *
-
-token = None
-if args.token is None:
-    token = os.getenv("TOKEN")
-else:
-    token = args.token
-
-if token is None:
-    raise ValueError(f"Токен не обнаружен")
-else:
-    logger.info(f"Токен [{token[:5]}...] используется")
 
 logger = logging.getLogger(__name__)
 
@@ -47,14 +33,14 @@ class Bot(commands.InteractionBot):
         self.add_cog(ActivityTasks(self))
 
         self.error_webhook = None
-        if args.webhook is not None:
+        if args.error_webhook is not None:
             try:
-                self.error_webhook = await self.fetch_webhook(args.webhook)
-                logger.info(f"Вебхук {args.webhook} успешно захвачен")
+                self.error_webhook = await self.fetch_webhook(args.error_webhook)
+                logger.info(f"Вебхук {args.error_webhook} успешно захвачен")
             except disnake.NotFound:
-                logger.warning(f"Не удалось найти вебхук с ID {args.webhook}. Проигнорируется")
+                logger.warning(f"Не удалось найти вебхук с ID {args.error_webhook}. Проигнорируется")
             except disnake.HTTPException as e:
-                logger.warning(f"Не удалось захватить вебхук {args.webhook} по причине {e.text}. Проигнорируется")
+                logger.warning(f"Не удалось захватить вебхук {args.error_webhook} по причине {e.text}. Проигнорируется")
             else:
                 await self.error_webhook.send(
                     content=f"Бот {self.user.mention} запущен",
@@ -183,4 +169,8 @@ class Bot(commands.InteractionBot):
             await inter.send("У вас нет прав чтобы закрыть петицию", ephemeral=True)
 
 bot = Bot()
+if (token := args.token) is None:
+    raise ValueError("Токен не обнаружен")
+else:
+    logger.info(f"Токен [{token[:5]}...] используется")
 bot.run(token)
