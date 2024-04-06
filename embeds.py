@@ -11,6 +11,7 @@ logger = logging.getLogger(__name__)
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from main import Bot
+    from commands import Commons
 
 def anonym(bool: bool) -> str:
     text = ""
@@ -19,10 +20,20 @@ def anonym(bool: bool) -> str:
     return text
 
 class ActivityEmbed(disnake.Embed):
-    def __init__(self, author: disnake.User, activity: VotingMaker.Voting | VotingMaker.Petition) -> None:
+    def __init__(self, inter: disnake.Interaction, author: disnake.Member | disnake.User, activity: VotingMaker.Voting | VotingMaker.Petition) -> None:
         anon = anonym(activity.anonym)
+        bot: Bot = inter.bot
 
-        super().__init__(title=activity.title, description=activity.description, timestamp=activity.created, color=disnake.Colour.red())
+        t = "\n\n> Если кнопки перестали работать, используйте команды [*/{}*] для голосования и [*/{}*] для завершения"
+        coms: Commons = bot.get_cog("Commons")
+        if isinstance(activity, VotingMaker.Voting):
+            f = (coms.vote.qualified_name, coms.stop_voting.qualified_name)
+        elif isinstance(activity, VotingMaker.Petition):
+            f = (coms.sign.qualified_name, coms.stop_petition.qualified_name)
+
+        desc = activity.description + t.format(*f)
+
+        super().__init__(title=activity.title, description=desc, timestamp=activity.created, color=disnake.Colour.red())
         self.set_author(name=author.display_name, icon_url=author.display_avatar.url)
         self.set_footer(text=f"{str(activity).capitalize()} №{activity.id} {anon}")
 

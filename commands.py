@@ -57,7 +57,7 @@ class Commons(commands.Cog, slash_command_attrs=dict(dm_permission=False)):
             name="создать",
             description="Создать голосование"
     )
-    async def create(self, inter: disnake.CommandInter, anonym: str = _voting_anonym, days: int = _day, hours: int = _hour, minutes: int = _minute) -> None:
+    async def create_voting(self, inter: disnake.CommandInter, anonym: str = _voting_anonym, days: int = _day, hours: int = _hour, minutes: int = _minute) -> None:
         b: bool = None
         match anonym:
             case "да":
@@ -71,15 +71,16 @@ class Commons(commands.Cog, slash_command_attrs=dict(dm_permission=False)):
             name="отобразить",
             description="Отображает голосование по его id"
     )
-    async def show(self, inter: disnake.CommandInter, id_: int = _voting_id) -> None:
+    async def show_voting(self, inter: disnake.CommandInter, id_: int = _voting_id) -> None:
         bot: Bot = inter.bot
         voting = await bot.voting.get_voting(id_)
         if voting is None:
             await inter.send(f"Голосование №{id_} не найдено", ephemeral=True)
             return
         embed = ActivityEmbed(
-                await inter.bot.fetch_user(voting.author_id),
-                voting
+            inter,
+            await inter.bot.fetch_user(voting.author_id),
+            voting
         )
         await inter.send(embed=embed, view=VotingView(id_), ephemeral=True)
 
@@ -87,7 +88,7 @@ class Commons(commands.Cog, slash_command_attrs=dict(dm_permission=False)):
         name="результаты",
         description="Отображает результаты голосования"
     )
-    async def results(self, inter: disnake.CommandInter, id_: int = _voting_id) -> None:
+    async def voting_results(self, inter: disnake.CommandInter, id_: int = _voting_id) -> None:
         bot: Bot = inter.bot
         voting = await bot.voting.get_voting(id_)
         if voting is None:
@@ -106,7 +107,7 @@ class Commons(commands.Cog, slash_command_attrs=dict(dm_permission=False)):
         name="история",
         description="Отображает список всех голосов в голосовании"
     )
-    async def history(self, inter: disnake.CommandInter, id_: int = _voting_id) -> None:
+    async def voting_history(self, inter: disnake.CommandInter, id_: int = _voting_id) -> None:
         bot: Bot = inter.bot
         voting = await bot.voting.get_voting(id_)
         if voting is None:
@@ -121,7 +122,7 @@ class Commons(commands.Cog, slash_command_attrs=dict(dm_permission=False)):
         name="список",
         description="Отображает список голосований"
     )
-    async def list(self, inter: disnake.CommandInter) -> None:
+    async def voting_list(self, inter: disnake.CommandInter) -> None:
         view = ActivitiesListView(inter, VotingMaker.Voting)
         embed = await view.change(0)
         if embed is not None:
@@ -131,7 +132,7 @@ class Commons(commands.Cog, slash_command_attrs=dict(dm_permission=False)):
         name="окончить",
         description="Завершает голосование"
     )
-    async def stop_(self, inter: disnake.CommandInter, id_: int = _voting_id) -> None:
+    async def stop_voting(self, inter: disnake.CommandInter, id_: int = _voting_id) -> None:
         bot: Bot = inter.bot
         voting = await bot.voting.get_voting(id_)
         if voting is None:
@@ -168,7 +169,7 @@ class Commons(commands.Cog, slash_command_attrs=dict(dm_permission=False)):
         name="создать",
         description="Создать петицию"
     )
-    async def create(self, inter: disnake.CommandInter, anonym: str = _petition_anonym, days: int = _day, hours: int = _hour, minutes: int = _minute) -> None:
+    async def create_petition(self, inter: disnake.CommandInter, anonym: str = _petition_anonym, days: int = _day, hours: int = _hour, minutes: int = _minute) -> None:
         b: bool = None
         match anonym:
             case "да":
@@ -182,15 +183,16 @@ class Commons(commands.Cog, slash_command_attrs=dict(dm_permission=False)):
         name="отобразить",
         description="Отображает петицию по его id"
     )
-    async def show(self, inter: disnake.CommandInter, id_: int = _petition_id) -> None:
+    async def show_petition(self, inter: disnake.CommandInter, id_: int = _petition_id) -> None:
         bot: Bot = inter.bot
         petition = await bot.voting.get_petition(id_)
         if petition is None:
             await inter.send(f"Петиция №{id_} не найдена", ephemeral=True)
             return
         embed = ActivityEmbed(
-                await inter.bot.fetch_user(petition.author_id),
-                petition
+            inter,
+            await inter.bot.fetch_user(petition.author_id),
+            petition
         )
         await inter.send(embed=embed, view=PetitionView(id_), ephemeral=True)
         
@@ -199,7 +201,7 @@ class Commons(commands.Cog, slash_command_attrs=dict(dm_permission=False)):
         name="результаты",
         description="Отображает результаты петиции"
     )
-    async def results(self, inter: disnake.CommandInter, id_: int = _petition_id) -> None:
+    async def petition_results(self, inter: disnake.CommandInter, id_: int = _petition_id) -> None:
         bot: Bot = inter.bot
         petition = await bot.voting.get_petition(id_)
         if petition is None:
@@ -217,7 +219,7 @@ class Commons(commands.Cog, slash_command_attrs=dict(dm_permission=False)):
         name="история",
         description="Отображает список всех подписей в петиции"
     )
-    async def history(self, inter: disnake.CommandInter, id_: int = _petition_id) -> None:
+    async def petition_history(self, inter: disnake.CommandInter, id_: int = _petition_id) -> None:
         bot: Bot = inter.bot
         petition = await bot.voting.get_petition(id_)
         if petition is None:
@@ -232,7 +234,7 @@ class Commons(commands.Cog, slash_command_attrs=dict(dm_permission=False)):
         name="список",
         description="Отображает список петиций"
     )
-    async def list(self, inter: disnake.CommandInter) -> None:
+    async def petition_list(self, inter: disnake.CommandInter) -> None:
         view = ActivitiesListView(inter, VotingMaker.Petition)
         embed = await view.change(0)
         if embed is not None:
@@ -242,7 +244,7 @@ class Commons(commands.Cog, slash_command_attrs=dict(dm_permission=False)):
         name="окончить",
         description="Завершает петицию"
     )
-    async def stop_(self, inter: disnake.CommandInter, id_: int = _petition_id):
+    async def stop_petition(self, inter: disnake.CommandInter, id_: int = _petition_id):
         bot: Bot = inter.bot
         petition = await bot.voting.get_petition(id_)
         if petition is None:
@@ -272,7 +274,7 @@ class Commons(commands.Cog, slash_command_attrs=dict(dm_permission=False)):
         name="история",
         description="Показывает историю подписей и голосов пользователя"
     )
-    async def history(self, inter: disnake.CommandInter, user: disnake.Member, filter = _actives_filter) -> None:
+    async def user_history(self, inter: disnake.CommandInter, user: disnake.Member, filter = _actives_filter) -> None:
         bot: Bot = inter.bot
         view = ActivesListView(inter, filter, user=user)
         embed = await view.change(0)
@@ -283,7 +285,7 @@ class Commons(commands.Cog, slash_command_attrs=dict(dm_permission=False)):
         name="созданные",
         description="Показывает список голосований и петиций, созданные этим пользователем"
     )
-    async def created(self, inter: disnake.CommandInter, user: disnake.Member, filter = _activity_filter) -> None:
+    async def user_created(self, inter: disnake.CommandInter, user: disnake.Member, filter = _activity_filter) -> None:
         bot: Bot = inter.bot
         view = ActivitiesListView(inter, filter, user=user)
         embed = await view.change(0)

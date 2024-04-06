@@ -63,6 +63,7 @@ class CreateVotingModal(AbsTitleAndDescModal):
         view = VotingView(voting.id)
 
         embed = ActivityEmbed(
+            inter,
             inter.author,
             voting
         )
@@ -91,6 +92,7 @@ class CreatePetitionModal(AbsTitleAndDescModal):
         view = PetitionView(petition.id)
 
         embed = ActivityEmbed(
+            inter,
             inter.author,
             petition
         )
