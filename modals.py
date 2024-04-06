@@ -69,6 +69,7 @@ class CreateVotingModal(AbsTitleAndDescModal):
         )
 
         logger.info(f"{inter.author.name} начал голосование №{voting.id}: {self.title}")
+        await bot.send_info_webhook(content=f"{inter.author.mention} начал голосование №{voting.id}: {self.title}")
         await inter.send("@everyone", embed=embed, view=view)
 
 class CreatePetitionModal(AbsTitleAndDescModal):
@@ -98,4 +99,5 @@ class CreatePetitionModal(AbsTitleAndDescModal):
         )
 
         logger.info(f"{inter.author.name} начал петицию №{petition.id}: {self.title}")
+        await bot.send_info_webhook(content=f"{inter.author.mention} начал петицию №{petition.id}: {self.title}")
         await inter.send("@everyone", embed=embed, view=view)

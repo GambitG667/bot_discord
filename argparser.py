@@ -20,5 +20,6 @@ argparser.add_argument("--out-file", action=argparse.BooleanOptionalAction, defa
 argparser.add_argument("--logger-level", "-l", choices=("DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"), default="INFO", help="Уровень логирования")
 argparser.add_argument("--token", "-t", metavar="BOT_TOKEN", type=str, default=os.getenv("BOT_TOKEN"), help="Использует данный токен или переменную окр. BOT_TOKEN")
 argparser.add_argument("--error-webhook", "-e", metavar="BOT_ERROR_WEBHOOK_ID", type=int, default=os.getenv("BOT_ERROR_WEBHOOK_ID"), help="Использует вебхук для исключений или переменную окр. BOT_ERROR_WEBHOOK_ID или игнорирует")
+argparser.add_argument("--info-webhook", "-i", metavar="BOT_INFO_WEBHOOK_ID", type=int, default=os.getenv("BOT_INFO_WEBHOOK_ID"), help="Использует вебхук для информирования или переменную окр. BOT_INFO_WEBHOOK_ID или игнорирует")
 
 args = argparser.parse_args(namespace=ArgsNamespace())

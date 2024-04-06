@@ -1,3 +1,4 @@
+from aiohttp import ClientSession
 import disnake
 from disnake.ext import commands
 import logging
@@ -36,31 +37,31 @@ class Bot(commands.InteractionBot):
         if args.error_webhook is not None:
             try:
                 self.error_webhook = await self.fetch_webhook(args.error_webhook)
-                logger.info(f"Вебхук {args.error_webhook} успешно захвачен")
+                logger.info(f"Вебхук исключений {args.error_webhook} успешно захвачен")
             except disnake.NotFound:
-                logger.warning(f"Не удалось найти вебхук с ID {args.error_webhook}. Проигнорируется")
+                logger.warning(f"Не удалось найти вебхук исключений с ID {args.error_webhook}. Проигнорируется")
             except disnake.HTTPException as e:
-                logger.warning(f"Не удалось захватить вебхук {args.error_webhook} по причине {e.text}. Проигнорируется")
-            else:
-                await self.error_webhook.send(
-                    content=f"Бот {self.user.mention} запущен",
-                    username=self.user.display_name + " Errors",
-                    avatar_url=self.user.display_avatar.url
-                )
+                logger.warning(f"Не удалось захватить вебхук исключений {args.error_webhook} по причине {e.text}. Проигнорируется")
         else:
-            logger.info("Вебхук не используется")
+            logger.info("Вебхук исключений не используется")
+
+        self.info_webhook = None
+        if args.info_webhook is not None:
+            try:
+                self.info_webhook = await self.fetch_webhook(args.info_webhook)
+                logger.info(f"Информационный вебхук {args.info_webhook} успешно захвачен")
+            except disnake.NotFound:
+                logger.warning(f"Не удалось найти информационный вебхук с ID {args.info_webhook}. Проигнорируется")
+            except disnake.HTTPException as e:
+                logger.warning(f"Не удалось захватить информационный вебхук {args.info_webhook} по причине {e.text}. Проигнорируется")
+        else:
+            logger.info("Информационный вебхук не используется")
 
     async def on_slash_command_error(self, inter: disnake.CommandInter, error: commands.CommandError) -> None:
         command = inter.application_command
         
-        if self.error_webhook is not None:
-            embed = ErrorEmbed(inter, self, error)
-            await self.error_webhook.send(
-                username=self.user.display_name + " Errors",
-                avatar_url=self.user.display_avatar.url,
-                embed=embed
-            )
-        
+        await self.send_error_webhook(embed=ErrorEmbed(inter, self, error))
+
         logger.error(
             f"При выполнении команды [{command.qualified_name}] для {inter.author.name} проигнорирована ошибка:",
             exc_info=(type(error), error, error.__traceback__)
@@ -69,8 +70,11 @@ class Bot(commands.InteractionBot):
     async def on_slash_command(self, inter: disnake.CommandInter) -> None:
         params = list(f"{k}: {v}" for k, v in inter.filled_options.items())
         t = [f"{inter.author.name} запросил комманду [{inter.application_command.qualified_name}]"]
+        wt = [f"{inter.author.mention} запросил команду `{inter.application_command.qualified_name}`"]
         if len(params) != 0:
             t.append(f"с параметрами {', '.join(params)}")
+            wt.append(f"с параметрами `{', '.join(params)}`")
+        await self.send_info_webhook(content=" ".join(wt))
         logger.info(" ".join(t))
 
     async def on_slash_command_completion(self, inter: disnake.CommandInter) -> None:
@@ -79,6 +83,22 @@ class Bot(commands.InteractionBot):
         if len(params) != 0:
             t.append(f"с параметрами {', '.join(params)}")
         logger.info(" ".join(t))
+
+    async def _send_webhook(self, webhook: disnake.Webhook, suffix: str = "", **kwargs) -> None:
+        await webhook.send(
+            username=self.user.display_name+" "+suffix,
+            avatar_url=self.user.display_avatar.url,
+            allowed_mentions=disnake.AllowedMentions.none(),
+            **kwargs
+        )
+
+    async def send_error_webhook(self, **kwargs) -> None:
+        if self.error_webhook is not None:
+            await self._send_webhook(self.error_webhook, "Errors", **kwargs)
+
+    async def send_info_webhook(self, **kwargs) -> None:
+        if self.info_webhook is not None:
+            await self._send_webhook(self.info_webhook, "Information", **kwargs)
 
     async def vote(self, inter: disnake.Interaction, voting: VotingMaker.Voting, type_: bool, label: str) -> None:
         user = inter.author
@@ -99,6 +119,7 @@ class Bot(commands.InteractionBot):
             await inter.send(f"Вы уже проголосовали за {label}", ephemeral=True)
             return
         logger.info(f"{user.name} прологосовал за \"{label}\" в голосовании №{voting.id}: {voting.title}")
+        await self.send_info_webhook(content=f"{user.mention} прологосовал за \"{label}\" в голосовании №{voting.id}: {voting.title}")
         
         await inter.send(f"Вы проголосовали за {label}", ephemeral=True)
         await bot.voting.create_vote(inter.author.id, voting.id, type_)
@@ -114,6 +135,7 @@ class Bot(commands.InteractionBot):
             await tasks.delete_voting_life(voting.id)
             await bot.voting.close_voting(voting.id)
             logger.info(f"{inter.author.name} окончил голосование №{voting.id}")
+            await self.send_info_webhook(content=f"{inter.author.mention} окончил голосование №{voting.id}")
             if send_embed:
                 count = await bot.voting.get_votes(voting.id)
                 embed = ResultsEmbed(
@@ -141,6 +163,7 @@ class Bot(commands.InteractionBot):
             await inter.send(f"Вы уже подписывали петицию", ephemeral=True)
             return
         logger.info(f"{user.name} подписал петицию №{petition.id}: {petition.title}")
+        await self.send_info_webhook(content=f"{user.mention} подписал петицию №{petition.id}: {petition.title}")
         
         await inter.send(f"Вы подписали петицию", ephemeral=True)
         await bot.voting.create_sign(inter.author.id, petition.id)
@@ -157,6 +180,7 @@ class Bot(commands.InteractionBot):
             await tasks.delete_petition_life(petition.id)
             petition = await bot.voting.close_petition(petition.id)
             logger.info(f"{inter.author.name} окончил петицию №{petition.id}")
+            await self.send_info_webhook(content=f"{inter.author.mention} окончил петицию №{petition.id}")
             signs_count = await bot.voting.get_signs(petition.id)
             if send_embed:
                 embed = ResultsEmbed(
