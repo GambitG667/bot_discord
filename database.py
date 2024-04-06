@@ -88,7 +88,7 @@ class AsyncSQLiteDB:
         logger.debug(f"Проверка таблицы {table_name} на наличие в базе данных")
         if not (await self._is_table_exist(table_name)):
             logger.warning(f"Таблицы \"{table_name}\" нет в базе. Она будет создана")
-        await self.execute_async(self.async_operate, query)
+            await self.async_operate(query)
 
     async def _create_votings_table(self) -> None:
         table_name = "votings"
