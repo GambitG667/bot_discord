@@ -219,7 +219,7 @@ class Commons(commands.Cog, slash_command_attrs=dict(dm_permission=False)):
     )
     async def history(self, inter: disnake.CommandInter, id_: int = _petition_id) -> None:
         bot: Bot = inter.bot
-        petition = bot.voting.get_petition(id_)
+        petition = await bot.voting.get_petition(id_)
         if petition is None:
             await inter.send(f"Петиция №{id_} не найдена", ephemeral=True)
             return
