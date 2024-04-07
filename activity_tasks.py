@@ -109,6 +109,7 @@ class ActivityTasks(commands.Cog):
                 activity = await self.bot.voting.get_petition(a.petition_id)
 
             if activity is not None:
+                print(a)
                 if a.death <= datetime.now():
                     if isinstance(a, self.VotingLife):
                         await self.bot.voting.close_voting(a.voting_id)
@@ -124,7 +125,7 @@ class ActivityTasks(commands.Cog):
                         await self.bot.voting.close_petition(a.petition_id)
                         await self.delete_petition_life(a.petition_id)
                         logger.info(f"Петиция №{a.petition_id} была успешно завершена")
-                        await self.bot.send_info_webhook(f"Петиция №{a.petition_id} была успешно завершена")
+                        await self.bot.send_info_webhook(content=f"Петиция №{a.petition_id} была успешно завершена")
                         embed = ResultsEmbed(
                             await self.bot.fetch_user(activity.author_id),
                             activity,
